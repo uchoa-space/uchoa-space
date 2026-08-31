@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Uchoa Space</title>
+<meta name="description" content="Rafael Uchoa — engineer. LinkedIn and GitHub." />
+<meta name="color-scheme" content="dark" />
+<!-- CSP (security audit item 4): deny-by-default, then allow only what the
+     page actually uses — same-origin scripts/styles plus the one inline
+     script by hash, the goatcounter beacon (sendBeacon + Image fallback
+     both hit its host), and data: for the favicon. GitHub Pages can't set
+     response headers, so frame-ancestors is intentionally omitted here —
+     a meta CSP ignores it, browsers only honour it as a real header. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-WeE/AL/NMnjV1YDqJ5wFGyJlLBoKJU2aMtor4SYQZn4='; style-src 'self' 'sha256-DAzCjX0xPnpb4MMQeu29LX8QEPAYcmO9n2fVUaKiDEQ='; img-src 'self' data: https://uchoa-space.goatcounter.com; connect-src https://uchoa-space.goatcounter.com; base-uri 'none'; form-action 'none'; object-src 'none'" />
+<!-- Inline data-URI favicon: a gold sparkle (matches the starfield motif) on
+     the page's near-black. Keeps it a zero-request icon — see the deploy
+     workflow note, a real file under assets/ wouldn't get published. -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23030410'/%3E%3Cpath d='M16 5 L19.5 12.5 L27 16 L19.5 19.5 L16 27 L12.5 19.5 L5 16 L12.5 12.5 Z' fill='%23f5c451'/%3E%3C/svg%3E" />
+<style>
+  /* ---------------------------------------------------------------
+     Figma → code. Every colour below is a variable from the Figma
+     file "Uchoa Space — Landing"; the button geometry is lifted
+     from frame 8:23. The starfield is the SVG
+     Figma exported. The wordmark is live text under a transform, not the
+     exported outline — see the note on .wordmark below.
+     --------------------------------------------------------------- */
+
+  :root {
+    --gold: #f5c451;
+    --gold-dim: #a9803a;
+    --bg-page: #030410;
+    --text-primary: #d8dae2;
+    --text-footer: #7b8298; /* 5.34:1 on --bg-page — WCAG AA (was #565b6e, 3.03:1) */
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 44px;
+    margin: 0;
+    padding: 0 16px 40px;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    background: var(--bg-page);
+    color: var(--text-primary);
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* --- starfield (Figma 7:7 / 8:24, exported as SVG) ---
+     A <picture> with a media-scoped <source> so the preload scanner only
+     ever fetches one SVG — a display:none pair on plain <img>s still
+     downloads both. display:contents on the wrapper keeps the img itself
+     the one that's position:fixed, so it stays out of body's flex flow
+     exactly like before (out-of-flow elements aren't flex items). */
+
+  .sky-wrap { display: contents; }
+
+  .sky {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+  }
+
+  /* --- wordmark ---
+     Live text, not an exported outline. The matrix is the one the original
+     canvas used to rasterise the word (A=0.86, C=-0.16, D=1.04): condense
+     to 86%, slant, stretch 4% taller. text-stroke hollows the letters out
+     and drop-shadow puts the glow around that stroke — text-shadow would
+     trace the invisible fill instead. --- */
+
+  .wordmark {
+    margin: 0;
+    max-width: 100%;
+    font-family: 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 900;
+    font-size: clamp(56px, 22vw, 96px);
+    line-height: 1.04;
+    letter-spacing: 0.084em;
+    text-align: center;
+    text-transform: uppercase;
+    color: transparent;
+    -webkit-text-stroke: 2px var(--gold);
+    transform: matrix(0.86, 0, -0.16, 1.04, 0, 0);
+    filter:
+      drop-shadow(0 0 7px rgba(245, 196, 81, 0.55))
+      drop-shadow(0 0 20px rgba(245, 196, 81, 0.28));
+  }
+
+  .wordmark span { display: block; }
+
+  /* --- link buttons (Figma component "Link Button", 6:16) --- */
+
+  .links {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: min(358px, 100%);
+  }
+
+  .links a,
+  .links button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+    padding: 14px 20px;
+    height: 48px;
+    width: 100%;
+    border: 1px solid var(--gold-dim);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--gold);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1;
+    font-family: inherit;
+    letter-spacing: 0.32px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease;
+  }
+
+  .links a:hover,
+  .links button:hover {
+    background: rgba(245, 196, 81, 0.1);
+    border-color: var(--gold);
+  }
+
+  .links svg {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    stroke: currentColor;
+  }
+
+  /* Groups the wordmark + nav as the page's <main> landmark. Mirrors body's
+     own column/center/gap so wrapping them changes nothing visually — body
+     now has one fewer in-flow child (main, footer) instead of three
+     (h1, nav, footer), so the gap has to be reproduced here too. */
+  main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 44px;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  footer {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-footer);
+  }
+
+  /* Figma's desktop frame (8:23): one-line wordmark, links in a row. */
+  @media (min-width: 640px) {
+    body { gap: 56px; padding: 0 80px 40px; }
+    main { gap: 56px; }
+    .wordmark {
+      font-size: clamp(64px, 9.2vw, 124px);
+      -webkit-text-stroke-width: 2.5px;
+    }
+    .wordmark span { display: inline; }
+    .links { flex-direction: row; width: auto; }
+    .links a, .links button { width: 220px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .links a, .links button { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<picture class="sky-wrap">
+  <source srcset="assets/starfield-desktop.svg" media="(min-width: 640px)" />
+  <img class="sky" src="assets/starfield-mobile.svg" alt="" aria-hidden="true" />
+</picture>
+
+<main>
+  <h1 class="wordmark"><span>Uchoa</span> <span>Space</span></h1>
+
+  <nav class="links" aria-label="Profiles">
+    <a href="https://www.linkedin.com/in/uchoaaa" rel="me noopener" target="_blank">
+      <!-- lucide "linkedin" (ISC) — Figma 6:6 -->
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M16 8C17.5913 8 19.1174 8.63214 20.2426 9.75736C21.3679 10.8826 22 12.4087 22 14V21H18V14C18 13.4696 17.7893 12.9609 17.4142 12.5858C17.0391 12.2107 16.5304 12 16 12C15.4696 12 14.9609 12.2107 14.5858 12.5858C14.2107 12.9609 14 13.4696 14 14V21H10V14C10 12.4087 10.6321 10.8826 11.7574 9.75736C12.8826 8.63214 14.4087 8 16 8Z"/>
+        <path d="M6 9H2V21H6V9Z"/>
+        <path d="M4 6C5.10457 6 6 5.10457 6 4C6 2.89543 5.10457 2 4 2C2.89543 2 2 2.89543 2 4C2 5.10457 2.89543 6 4 6Z"/>
+      </svg>
+      LinkedIn
+    </a>
+    <a href="https://github.com/uuchoaa" rel="me noopener" target="_blank">
+      <!-- lucide "github" (ISC) — Figma 6:10 -->
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 22V18C15.1391 16.7473 14.7797 15.4901 14 14.5C17 14.5 20 12.5 20 9C20.08 7.75 19.73 6.52 19 5.5C19.28 4.35 19.28 3.15 19 2C19 2 18 2 16 3.5C13.36 3 10.64 3 8 3.5C6 2 5 2 5 2C4.7 3.15 4.7 4.35 5 5.5C4.27 6.52 3.92 7.75 4 9C4 12.5 7 14.5 10 14.5C9.61 14.99 9.32 15.55 9.15 16.15C8.98 16.75 8.93 17.38 9 18V22"/>
+        <path d="M9 18C4.49 20 4 16 2 16"/>
+      </svg>
+      GitHub
+    </a>
+  </nav>
+</main>
+
+<footer>&copy; <span id="year"></span> Rafael Uchoa</footer>
+
+<script>
+  document.getElementById('year').textContent = String(new Date().getFullYear());
+</script>
+
+<!-- GoatCounter (EUPL). No cookies and no personal data, so the page needs
+     no consent banner. Vendored locally at assets/count.js (security audit
+     item 5) instead of loading gc.zgo.at at runtime — a compromised CDN
+     would otherwise get full script execution on this origin. The pageview
+     endpoint stays GoatCounter's cloud (data-goatcounter below); only the
+     script's own source moved same-origin. To update, re-fetch by hand from
+     https://gc.zgo.at/count.js — it's small, stable, and ISC-licensed. -->
+<script data-goatcounter="https://uchoa-space.goatcounter.com/count"
+        async src="assets/count.js"></script>
+
+</body>
+</html>
