@@ -5,11 +5,18 @@
 // bare URL while the markup looks perfect, which is the exact state this
 // feature exists to leave behind. That check is why this is a script.
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import { discoverPages, readMeta } from './lib/dist-pages.mjs';
 
 const SITE = 'https://uchoa.space/';
 const DIST = 'dist';
+
+// Deliberately a second, independent spelling of `OG_DIR` in `src/lib/og-image.ts`
+// rather than an import of it. Importing would make the two agree by
+// construction, which is exactly the agreement that must not be assumed: a typo
+// there has to be caught here, and a shared constant cannot disagree with
+// itself.
+const OG_SOURCE_DIR = join('public', 'assets', 'og');
 
 // Emitted by src/components/ShareMeta.astro. `article:published_time` is
 // required only where og:type says article, which is the one difference
@@ -31,6 +38,14 @@ const REQUIRED = [
   ['twitter:image', 'name'],
   ['twitter:image:alt', 'name'],
 ];
+
+// `dist/articles/<slug>/index.html` -> `<slug>`. The landing is not an article
+// and has no slug, so it is exempt from the own-card assertion below.
+function articleSlug(file) {
+  const parts = file.split(sep);
+  const i = parts.indexOf('articles');
+  return i === -1 || parts.length < i + 3 ? undefined : parts[i + 1];
+}
 
 function checkPage(file) {
   const html = readFileSync(file, 'utf8');
@@ -91,6 +106,26 @@ function checkPage(file) {
   const twitterImage = get('twitter:image', 'name');
   if (image !== twitterImage) {
     problems.push(`twitter:image (${twitterImage}) differs from og:image (${image})`);
+  }
+
+  // The check above proves the card the page points at exists. It cannot prove
+  // it is the *right* card: if `ogImagePath` misses its lookup — a typo in
+  // `OG_DIR`, a wrong extension, a slug path built without its leading
+  // `/assets/og/` — every post silently degrades to the generic wordmark card,
+  // the build stays clean, and the existence check still passes because
+  // `default.png` is genuinely there. Reproduced: with `OG_DIR` typo'd, both
+  // articles resolved to `default.png` and this script reported 0 failed. So
+  // where a post has drawn its own card, assert the page actually points at it.
+  const slug = articleSlug(file);
+  if (slug !== undefined && existsSync(join(OG_SOURCE_DIR, `${slug}.png`))) {
+    const expected = `${SITE}assets/og/${slug}.png`;
+    if (image !== expected) {
+      problems.push(
+        `og:image does not point at this post's own card despite ` +
+          `${join(OG_SOURCE_DIR, `${slug}.png`)} existing — ` +
+          `found ${image}, expected ${expected}`,
+      );
+    }
   }
 
   // An alt that repeats the title passes a presence check while telling a
