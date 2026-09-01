@@ -1,0 +1,39 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import Post from '../../layouts/Post.astro';
+import Callout from '../../components/Callout.astro';
+import { readingTime } from '../../lib/reading-time';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+type Props = { post: CollectionEntry<'posts'> };
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+// Computed here, from the body on disk, so no post can carry a hand-written
+// reading time in its frontmatter.
+const minutes = readingTime(post.body ?? '');
+---
+
+<Post
+  title={post.data.title}
+  description={post.data.description}
+  date={post.data.date}
+  readingTime={minutes}
+  slug={post.id}
+  imageAlt={post.data.imageAlt}
+>
+  {/*
+    Components handed to MDX here are in scope for every post, so a post writes
+    <Callout> with no import line of its own. Adding one to the map is the only
+    registration a new article component needs.
+  */}
+  <Content components={{ Callout }} />
+</Post>

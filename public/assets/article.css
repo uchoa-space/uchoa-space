@@ -1,0 +1,499 @@
+/* -------------------------------------------------------------------------
+   Article shell and prose typography.
+
+   The rhythm, sizes and element set below are transcribed by hand from the
+   prose scale of the frozen Tailwind template (its `typography.ts`), with the
+   Tailwind spacing scale resolved to rem (1 unit = 0.25rem) and its teal
+   accent replaced by the landing's gold. Nothing is imported from that
+   template and this project has no Tailwind.
+
+   The landing declares `color-scheme: dark` and a single near-black palette,
+   so the prose is dark only. There is no light theme on this site to match and
+   inventing one here would produce a second visual language.
+
+   It lives in `public/` and is linked as a plain file rather than imported
+   through Vite, for two reasons. The rules have to reach markdown-generated
+   elements and MDX slot content, which Astro's component scoping does not
+   cover. And a Vite-imported stylesheet is injected as an inline `style`
+   element in `astro dev` while being emitted as a file in `astro build`; a
+   plain file behaves identically in both, so `style-src 'self'` covers it
+   everywhere and the landing's CSP hash lock is never involved.
+   ------------------------------------------------------------------------- */
+
+:root {
+  --prose-bg: #030410;
+  --prose-body: #b3b8c6;
+  --prose-headings: #e6e8ef;
+  --prose-muted: #7b8298;
+  --prose-link: #f5c451;
+  --prose-link-hover: #ffd77a;
+  --prose-underline: rgba(245, 196, 81, 0.3);
+  --prose-hr: rgba(123, 130, 152, 0.28);
+  --prose-quote-border: #4d5468;
+  --prose-code: #d8dae2;
+  --prose-code-bg: rgba(216, 218, 226, 0.07);
+  --prose-pre-bg: rgba(0, 0, 0, 0.4);
+  --prose-pre-border: rgba(216, 218, 226, 0.1);
+  --prose-th-border: rgba(123, 130, 152, 0.5);
+  --prose-td-border: rgba(123, 130, 152, 0.22);
+  --prose-callout-bg: rgba(216, 218, 226, 0.05);
+  --prose-callout-rule: rgba(216, 218, 226, 0.1);
+}
+
+/* --- page shell ------------------------------------------------------- */
+
+.article-page {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 20px 96px;
+  min-height: 100dvh;
+  background: var(--prose-bg);
+  color: var(--prose-body);
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.article-page *,
+.article-page *::before,
+.article-page *::after {
+  box-sizing: border-box;
+}
+
+/* ~68 characters at the 1rem body size, which is the measure the reference
+   scale was tuned against. */
+.article {
+  width: min(38rem, 100%);
+  margin: 0 auto;
+}
+
+.article-nav {
+  padding: 32px 0 0;
+  font-size: var(--fs-small);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-interactive);
+}
+
+.article-nav a {
+  color: var(--prose-muted);
+  text-decoration: none;
+}
+
+.article-nav a:hover {
+  color: var(--prose-link);
+}
+
+.article-header {
+  margin: 64px 0 48px;
+}
+
+.article-title {
+  margin: 0;
+  color: var(--prose-headings);
+  font-size: clamp(1.875rem, 6vw, 2.5rem);
+  font-weight: var(--fw-bold);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+
+/* Same metadata role as the post list's date and the footer's copyright:
+   --fs-caption / --fw-medium. Kept its own generous line-height (rather than
+   the site's tight default for single-line meta) because "date · reading
+   time" can wrap to two lines on narrow screens. */
+.article-meta {
+  margin: 20px 0 0;
+  color: var(--prose-muted);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  line-height: 1.5rem;
+}
+
+/* Same separator in the meta line and in the footer: date · reading time,
+   copyright · tagline. */
+.article-meta .sep,
+.article-footer .sep {
+  padding: 0 0.5rem;
+}
+
+.article-footer {
+  margin-top: 5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--prose-hr);
+  color: var(--prose-muted);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+}
+
+.article-page :focus-visible {
+  outline: 2px solid var(--prose-link);
+  outline-offset: 2px;
+}
+
+/* --- prose ------------------------------------------------------------ */
+
+.prose {
+  color: var(--prose-body);
+  font-size: var(--fs-body);
+  line-height: 1.75rem;
+}
+
+.prose > * {
+  margin-top: 2.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.prose > :first-child {
+  margin-top: 0;
+}
+
+.prose > :last-child {
+  margin-bottom: 0;
+}
+
+.prose p {
+  margin-top: 1.75rem;
+  margin-bottom: 1.75rem;
+}
+
+/* Headings */
+
+.prose h2,
+.prose h3 {
+  color: var(--prose-headings);
+  font-weight: var(--fw-semibold);
+}
+
+.prose h2 {
+  font-size: var(--fs-h2);
+  line-height: 1.75rem;
+  margin-top: 5rem;
+  margin-bottom: 1rem;
+}
+
+.prose h3 {
+  font-size: 1rem;
+  line-height: 1.75rem;
+  margin-top: 4rem;
+  margin-bottom: 1rem;
+}
+
+.prose :is(h2, h3) + * {
+  margin-top: 0;
+}
+
+/* Images */
+
+.prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 1.5rem;
+}
+
+/* Inline elements */
+
+.prose a {
+  color: var(--prose-link);
+  font-weight: var(--fw-semibold);
+  text-decoration: underline;
+  text-decoration-color: var(--prose-underline);
+  text-underline-offset: 2px;
+  transition:
+    color 150ms ease-in-out,
+    text-decoration-color 150ms ease-in-out;
+}
+
+.prose a:hover {
+  color: var(--prose-link-hover);
+  text-decoration-color: var(--prose-link-hover);
+}
+
+.prose strong {
+  color: var(--prose-headings);
+  font-weight: var(--fw-semibold);
+}
+
+/* --- marker underline ---------------------------------------------------
+
+   The same hand-drawn gold sweep the landing hero puts under its one numeric
+   claim (`.mark` in src/pages/index.astro). Two passes at different
+   opacities, the way a real marker doubles back, drawn as an SVG data URI —
+   `img-src 'self' data:` in the article CSP already covers it, so this needs
+   no file and no policy change.
+
+   Styled on the bare element rather than a class: a post writes plain
+   `<mark>`, and nothing about a highlight is worth a class name in prose. The
+   browser default for `mark` is a yellow ground and black text, so both are
+   reset before the sweep is painted.
+
+   preserveAspectRatio="none" lets it stretch to whatever width the phrase
+   ends up being; only its length distorts, the thickness survives.
+   box-decoration-break: clone gives each line its own sweep when the phrase
+   wraps, instead of one box sliced across two lines.
+
+   Use it once, maybe twice, in a post. It marks the sentence the argument
+   turns on, and a page with five of them marks nothing.
+
+   The stroke would be a decoration a screen reader never announces, so the
+   phrase under it has to read as load-bearing on its own — `mark` carries no
+   implicit semantics beyond relevance. */
+
+.prose mark {
+  background-color: transparent;
+  color: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 14' preserveAspectRatio='none'%3E%3Cpath d='M3 8.5 C 62 3.5, 118 10.5, 178 5.5 S 258 3.5, 297 7' fill='none' stroke='%23f5c451' stroke-width='3' stroke-linecap='round' opacity='0.85'/%3E%3Cpath d='M9 11.5 C 74 7.5, 140 12.5, 202 8.5 S 268 8, 291 11' fill='none' stroke='%23f5c451' stroke-width='2' stroke-linecap='round' opacity='0.45'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 100% 0.5em;
+  background-position: 0 100%;
+  padding-bottom: 0.3em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.prose code {
+  color: var(--prose-code);
+  font-size: 0.875em;
+  font-weight: var(--fw-semibold);
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  background-color: var(--prose-code-bg);
+  border-radius: 0.5rem;
+  padding: 0.1em 0.3em;
+}
+
+.prose a code {
+  color: inherit;
+}
+
+.prose :is(h2, h3) code {
+  font-weight: var(--fw-bold);
+}
+
+/* Quotes */
+
+.prose blockquote {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 1.5rem;
+  border-left: 2px solid var(--prose-quote-border);
+  font-style: italic;
+}
+
+/* Figures */
+
+.prose figure {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.prose figcaption {
+  color: var(--prose-muted);
+  font-size: var(--fs-small);
+  line-height: 1.5rem;
+  margin-top: 0.75rem;
+}
+
+.prose figcaption > p {
+  margin: 0;
+}
+
+/* Lists */
+
+.prose ul {
+  list-style-type: disc;
+}
+
+.prose ol {
+  list-style-type: decimal;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.5rem;
+}
+
+.prose li {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-left: 0.875rem;
+}
+
+.prose li::marker {
+  font-size: var(--fs-small);
+  font-weight: var(--fw-semibold);
+}
+
+.prose ol > li::marker {
+  color: var(--prose-headings);
+}
+
+.prose ul > li::marker {
+  color: var(--prose-headings);
+}
+
+.prose li :is(ol, ul) {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.prose li :is(li, p) {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Code blocks.
+
+   Shiki writes the theme's own background and foreground as an inline style
+   attribute on the <pre>, which is the one thing here that has to be beaten
+   with !important; the per-token colours inside are left alone. */
+
+.prose pre {
+  color: #e6e8ef !important;
+  background-color: var(--prose-pre-bg) !important;
+  font-size: var(--fs-small);
+  font-weight: var(--fw-medium);
+  line-height: 1.6;
+  border: 1px solid var(--prose-pre-border);
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  overflow-x: auto;
+}
+
+.prose pre code {
+  display: inline;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  background-color: transparent;
+  border-radius: 0;
+  padding: 0;
+}
+
+/* Horizontal rules */
+
+.prose hr {
+  margin-top: 5rem;
+  margin-bottom: 5rem;
+  border: 0;
+  border-top: 1px solid var(--prose-hr);
+}
+
+/* Tables.
+
+   The table is wrapped in .table-scroll at build time (rehype-table-scroll).
+   `width: max-content` lets a wide table take the width it needs and the
+   wrapper scroll, while `min-width: 100%` keeps a narrow one full measure. */
+
+.prose .table-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.prose table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+  text-align: left;
+  font-size: var(--fs-small);
+  border-collapse: collapse;
+}
+
+.prose thead {
+  border-bottom: 1px solid var(--prose-th-border);
+}
+
+.prose thead th {
+  color: var(--prose-headings);
+  font-weight: var(--fw-semibold);
+  vertical-align: bottom;
+  padding-bottom: 0.5rem;
+}
+
+.prose thead th:not(:first-child) {
+  padding-left: 0.5rem;
+}
+
+.prose thead th:not(:last-child) {
+  padding-right: 0.5rem;
+}
+
+.prose tbody tr {
+  border-bottom: 1px solid var(--prose-td-border);
+}
+
+.prose tbody tr:last-child {
+  border-bottom-width: 0;
+}
+
+.prose tbody td {
+  vertical-align: baseline;
+}
+
+.prose tfoot {
+  border-top: 1px solid var(--prose-th-border);
+}
+
+.prose tfoot td {
+  vertical-align: top;
+}
+
+.prose :is(tbody, tfoot) td {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.prose :is(tbody, tfoot) td:not(:first-child) {
+  padding-left: 0.5rem;
+}
+
+.prose :is(tbody, tfoot) td:not(:last-child) {
+  padding-right: 0.5rem;
+}
+
+/* --- callout ----------------------------------------------------------
+
+   A caveat, not an alert. A quiet tinted ground at full body measure, no
+   icon, no accent bar, no colour that reads as danger: what these hold are
+   admissions of limits. Its own padding replaces the first and last child's
+   margins so the box does not gain a hidden extra line of space.
+
+   Lives here rather than in a scoped <style> inside Callout.astro because the
+   rules have to reach the markdown the slot renders, which scoping excludes. */
+
+.prose .callout {
+  margin-top: 2.5rem;
+  margin-bottom: 2.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--prose-callout-bg);
+  border: 1px solid var(--prose-callout-rule);
+  border-radius: 0.75rem;
+  font-size: var(--fs-copy);
+  line-height: 1.7;
+}
+
+.prose .callout > :first-child {
+  margin-top: 0;
+}
+
+.prose .callout > :last-child {
+  margin-bottom: 0;
+}
+
+.prose .callout p {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 640px) {
+  .article-nav {
+    padding-top: 48px;
+  }
+
+  .prose {
+    font-size: var(--fs-body-lg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prose a,
+  .article-nav a {
+    transition: none;
+  }
+}

@@ -1,0 +1,159 @@
+/* -------------------------------------------------------------------------
+   The post list that sits under the landing's hero.
+
+   Every rule here is scoped to `.posts`, and the hero's own inline stylesheet
+   is not touched: that block is pinned by a SHA-256 hash in the page's CSP, so
+   adding a declaration to it would block the landing's own CSS in the browser.
+   This file is served from public/ as a plain same-origin stylesheet, which
+   `style-src 'self'` already allows and which behaves the same in `astro dev`
+   as in a build.
+
+   Colours and the font stack are the hero's, read off src/pages/index.astro.
+   ------------------------------------------------------------------------- */
+
+.posts {
+  width: min(34rem, 100%);
+  text-align: left;
+  /* How far each row's hover panel bleeds past the text on either side. The
+     panel is wider than the column so the text is not shoved inward when it
+     appears. Smaller on mobile, where the body only has 16px of side padding
+     to bleed into. */
+  --row-inset: 12px;
+}
+
+@media (min-width: 640px) {
+  .posts {
+    --row-inset: 20px;
+  }
+}
+
+.posts-heading {
+  margin: 0 0 20px;
+  color: #7b8298;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.posts-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The whole row is the tap target, not just the title. The link keeps its
+   place on the title, so its accessible name stays the title alone, and an
+   empty ::after stretched over the row carries the pointer target. Wrapping
+   date and description inside the <a> instead would make a screen reader
+   announce the entire row as one long link name.
+
+   The cost, stated plainly: the overlay sits above the text, so the date and
+   description can no longer be selected with the mouse. Nothing here is worth
+   copying, and a thumb-sized target on mobile is worth more. */
+.post {
+  position: relative;
+  padding: 16px var(--row-inset);
+  margin-inline: calc(var(--row-inset) * -1);
+  border-radius: 12px;
+  transition: background-color 140ms ease, box-shadow 140ms ease;
+}
+
+/* The hovered row gets the same panel the article's callout has: same tint,
+   same hairline, same radius. One difference, and it is the whole point of
+   this rule — the callout's rgba(216, 218, 226, 0.05) is translucent, which
+   over the starfield would lighten the stars along with the panel instead of
+   covering them. #0e0f1a is that same tint composited over the page's
+   near-black (#030410) once, flattened, so it reads identically and is
+   opaque.
+
+   The inset box-shadow draws the hairline instead of a border so the row's
+   box never changes size between rest and hover. */
+.post:hover {
+  background-color: #0e0f1a;
+  box-shadow: inset 0 0 0 1px rgba(216, 218, 226, 0.1);
+}
+
+/* The whole padded row is the target, so the overlay now covers the panel
+   rather than just the text block. */
+.post-title a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.post + .post {
+  margin-top: 16px;
+}
+
+/* The rule sits in the gap between two panels rather than on the row itself,
+   so a hovered panel is never crossed by a line. */
+.post + .post::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: var(--row-inset);
+  right: var(--row-inset);
+  height: 1px;
+  background: rgba(123, 130, 152, 0.22);
+}
+
+.post-title {
+  margin: 0;
+  font-size: var(--fs-body-lg);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-heading);
+}
+
+.post-title a {
+  color: #d8dae2;
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+/* Hovering anywhere on the row now activates the link, so the title reacts to
+   the row rather than to itself. */
+.post:hover .post-title a {
+  color: #f5c451;
+}
+
+/* Keyboard focus lands on the title text, and the page's global focus ring
+   would outline just that word. Outline the row instead, so the indicator
+   matches the area that is actually clickable. Browsers without :has() still
+   get the global ring on the title. */
+.post:has(.post-title a:focus-visible) {
+  outline: 2px solid #f5c451;
+  outline-offset: 0;
+}
+
+.post:has(.post-title a:focus-visible) .post-title a:focus-visible {
+  outline: none;
+}
+
+.post-date {
+  margin: 6px 0 0;
+  color: #7b8298;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+}
+
+.post-description {
+  margin: 10px 0 0;
+  color: #b3b8c6;
+  font-size: var(--fs-copy);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-copy);
+}
+
+@media (min-width: 640px) {
+  .posts-heading {
+    margin-bottom: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-title a,
+  .post {
+    transition: none;
+  }
+}

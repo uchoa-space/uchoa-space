@@ -1,0 +1,20 @@
+---
+/**
+ * A caveat set apart from the body text, not an alert.
+ *
+ * What these hold are honest admissions of limits: a sample too small, a thing
+ * that never ran in production, a problem still open. So the register is quiet
+ * — a tinted ground at full body measure, no icon, no accent bar, no colour
+ * that reads as danger. An `aside` because the content is tangential to the
+ * argument, not a warning about it.
+ *
+ * Styling lives in public/assets/article.css under `.prose .callout`, not in a
+ * scoped style block here: the rules have to reach the markdown the slot
+ * renders, which Astro's component scoping deliberately does not.
+ *
+ * Available to every MDX post without an import — see the `components` prop in
+ * src/pages/articles/[...slug].astro.
+ */
+---
+
+<aside class="callout"><slot /></aside>
