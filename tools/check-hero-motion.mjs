@@ -17,6 +17,10 @@
 // animation-name into the DOM, and read it back with Chrome's --dump-dom.
 // Stripping the CSP is what lets the probe run at all, so it must happen on the
 // copy and never on dist/index.html itself.
+//
+// Three motion modes, because the hero has three: the first visit, a reader who
+// has asked the system to stop motion, and a repeat visit. Each is governed by
+// its own selector list, and all three lists have to name the CTA explicitly.
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
@@ -57,6 +61,11 @@ if (stripped === html) {
 }
 
 const probeScript = `<script>
+  // The repeat-visit state is normally set by the head script from
+  // sessionStorage, which a fresh Chrome profile never has. Stamping it here
+  // and reading getComputedStyle in the same task is enough: the assertion is
+  // about the resolved cascade, not about watching an animation run.
+  if (location.hash === '#hero-seen') document.documentElement.dataset.heroSeen = '';
   var out = [];
   ${JSON.stringify(TARGETS.map(([sel]) => sel))}.forEach(function (sel) {
     var el = document.querySelector(sel);
@@ -71,7 +80,7 @@ const probeScript = `<script>
 mkdirSync(WORK, { recursive: true });
 writeFileSync(PROBE, stripped.replace('</body>', probeScript + '</body>'));
 
-function probe(reducedMotion) {
+function probe({ reducedMotion = false, heroSeen = false } = {}) {
   const args = [
     '--headless',
     '--disable-gpu',
@@ -80,7 +89,7 @@ function probe(reducedMotion) {
     '--dump-dom',
   ];
   if (reducedMotion) args.push('--force-prefers-reduced-motion');
-  args.push('file://' + resolve(PROBE));
+  args.push('file://' + resolve(PROBE) + (heroSeen ? '#hero-seen' : ''));
   // Chrome writes harmless task_policy_set noise to stderr; ignore it.
   const dom = execFileSync(CHROME, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   const block = dom.match(/<pre id="motion-probe">([\s\S]*?)<\/pre>/)?.[1] ?? '';
@@ -96,7 +105,7 @@ const problems = [];
 
 // 1. Plain: everything animates, and the CTA's list carries the entrance as
 //    well as the fill.
-const plain = probe(false);
+const plain = probe();
 console.log('motion (default):');
 for (const [sel, label] of TARGETS) {
   const name = plain.get(sel) ?? 'NOT-REPORTED';
@@ -114,13 +123,29 @@ if (!ctaPlain.split(',').map((n) => n.trim()).includes('hero-rise')) {
 }
 
 // 2. Reduced motion: nothing animates, the CTA included.
-const reduced = probe(true);
+const reduced = probe({ reducedMotion: true });
 console.log('motion (prefers-reduced-motion: reduce):');
 for (const [sel, label] of TARGETS) {
   const name = reduced.get(sel) ?? 'NOT-REPORTED';
   console.log(`  ${label.padEnd(18)} animation-name = ${name}`);
   if (name !== 'none') {
     problems.push(`${label} still animates (${name}) under prefers-reduced-motion`);
+  }
+}
+
+// 3. Repeat visit: the head script stamps data-hero-seen from sessionStorage,
+//    and that escape hatch switches every entrance off so a reader who has
+//    already watched it is not made to watch it again. This is the most
+//    travelled state in production — every visit after the first, and every
+//    return from an article — and it is beaten by the same specificity the
+//    other two lists were, so it is asserted rather than assumed.
+const heroSeen = probe({ heroSeen: true });
+console.log('motion (data-hero-seen, a repeat visit):');
+for (const [sel, label] of TARGETS) {
+  const name = heroSeen.get(sel) ?? 'NOT-REPORTED';
+  console.log(`  ${label.padEnd(18)} animation-name = ${name}`);
+  if (name !== 'none') {
+    problems.push(`${label} still animates (${name}) on a repeat visit`);
   }
 }
 
@@ -131,4 +156,4 @@ if (problems.length) {
   console.log(`${problems.length} problems`);
   process.exit(1);
 }
-console.log(`${TARGETS.length} elements checked in 2 motion modes, 0 problems`);
+console.log(`${TARGETS.length} elements checked in 3 motion modes, 0 problems`);

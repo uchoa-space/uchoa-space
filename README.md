@@ -65,7 +65,7 @@ and it is not what `git diff` shows you.
 npm run build
 npm run check:csp     # every inline block's hash is declared in the page's CSP
 npm run check:og      # the share tags, and that the card PNGs are really there
-npm run check:motion  # the hero animates, and stops when asked to
+npm run check:motion  # the hero animates, and stops when asked to, in 3 modes
 ```
 
 `check:csp` hashes every inline `<style>` and `<script>` in `dist/index.html`
@@ -82,11 +82,14 @@ card whose image 404s unfurls as a bare URL while the markup looks perfect.
 `check:motion` asks a browser what the hero's CSS actually resolves to. It
 copies the built page somewhere throwaway, strips the CSP so a probe script
 can run, and reads back `animation-name` for the wordmark, the lede, the
-intro, a plain link and the CTA — once normally, once under
-`--force-prefers-reduced-motion`. It asserts every element animates in the
-first pass, that the CTA's list still contains the `hero-rise` entrance and
-not only its own fill, and that every element including the CTA goes to
-`none` in the second. It needs headless Chrome, the same binary
+intro, a plain link and the CTA, in the hero's three motion modes: a first
+visit, a reader under `prefers-reduced-motion`, and a repeat visit, the
+state `data-hero-seen` puts the page in on every load after the first and on
+every return from an article. It asserts every element animates on the first
+visit and that the CTA's list still contains the `hero-rise` entrance and not
+only its own fill, and that every element including the CTA reports `none` in
+the other two. Each mode is governed by its own selector list, and all three
+lists have to reach the CTA. It needs headless Chrome, the same binary
 `tools/og/render.sh` uses. Unlike the other two it is a browser check, not a
 text check: the bug it exists for was a specificity accident that was
 invisible in the CSS source and only appeared once a browser had resolved
