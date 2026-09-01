@@ -1,0 +1,70 @@
+/* -------------------------------------------------------------------------
+   The starfield, shared by the landing and the article pages.
+
+   Markup is src/components/Starfield.astro. These rules lived in the
+   landing's inline <style> until the article pages needed them too; moving
+   them here removed the copy rather than making a second one, and shrank the
+   block whose bytes the landing's CSP pins by hash.
+
+   display:contents on the wrapper keeps the <img> itself the positioned box,
+   so it stays out of the body's flex flow exactly as before — out-of-flow
+   elements are not flex items.
+
+   Both pages let their body background propagate to the canvas, which paints
+   beneath everything; a z-index of -1 puts the stars above that background
+   and below the page's own content.
+   ------------------------------------------------------------------------- */
+
+.sky-wrap {
+  display: contents;
+}
+
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* One field across the whole site, not one per page.
+
+   Both documents opt into cross-document view transitions, and the starfield
+   carries a view-transition-name, so the browser matches it across the
+   navigation and treats it as the same element: it stays put while the
+   content around it changes, instead of being torn down and rebuilt. That is
+   also why the geometry below must be identical on every page — a field that
+   is fixed and full-bleed here and anchored and cropped there would animate
+   between the two shapes on every click.
+
+   CSS rather than Astro's ClientRouter on purpose: this needs no JavaScript,
+   no change to either page's CSP, and it leaves navigation a real navigation,
+   so the landing's inline scripts keep running the way they do today.
+   Browsers without support simply navigate, with no transition. */
+
+@view-transition {
+  navigation: auto;
+}
+
+.sky {
+  view-transition-name: sky;
+}
+
+/* The stars stay, but they step back for long-form reading: 2000 words of
+   body text over a star pattern is the same readability problem the post rows
+   had, except it lasts the whole scroll. Dimming rather than reshaping keeps
+   the field continuous across the navigation — the transition is a fade in
+   intensity, not a jump in geometry. */
+.article-page .sky {
+  opacity: 0.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

@@ -1,9 +1,9 @@
 name: Deploy to Pages
 
-# The repository holds more than the site — prototypes/ and walkthrough/ are
-# kept for the record but must not be reachable on the domain. So the job
-# assembles a _site directory with only what the public should get, rather
-# than serving the branch as-is.
+# The repository holds more than the site — src/, tasks/ and the toolchain are
+# kept in git but must not be reachable on the domain. Astro gives that for
+# free: dist/ only ever contains the built pages plus a verbatim copy of
+# public/, so publishing dist/ is the whole guarantee. Nothing is hand-copied.
 
 on:
   push:
@@ -28,17 +28,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Assemble the site
-        run: |
-          mkdir -p _site
-          cp index.html CNAME _site/
-          cp -r assets _site/assets
+      # Pinned to the major version the site is developed against locally.
+      # Astro 7 requires >=22.12.0; a drift here is a drift in the output.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
 
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: dist
 
       - id: deployment
         uses: actions/deploy-pages@v4

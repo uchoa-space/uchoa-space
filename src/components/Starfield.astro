@@ -1,0 +1,22 @@
+---
+/**
+ * The starfield that sits behind every page.
+ *
+ * A <picture> with a media-scoped <source> so the preload scanner only ever
+ * fetches one SVG — a display:none pair on plain <img>s still downloads both.
+ *
+ * The paths are absolute because this renders on `/` and on
+ * `/articles/<slug>/` alike, and the site is published at an apex domain with
+ * no base path (see astro.config.mjs).
+ *
+ * Styling lives in public/assets/sky.css, not in a <style> block here: this
+ * component renders on the landing, whose one inline style block is pinned by
+ * a SHA-256 hash in its CSP, and a plain same-origin file behaves the same in
+ * `astro dev` as in a build. Same reasoning as article.css and posts.css.
+ */
+---
+
+<picture class="sky-wrap">
+  <source srcset="/assets/starfield-desktop.svg" media="(min-width: 640px)" />
+  <img class="sky" src="/assets/starfield-mobile.svg" alt="" aria-hidden="true" />
+</picture>
