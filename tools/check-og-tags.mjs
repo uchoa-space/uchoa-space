@@ -39,8 +39,16 @@ function checkPage(file) {
   const get = (n, a = 'property') => readMeta(html, n, a);
   const problems = [];
 
+  // An empty value is not a present tag. `content=""` renders, passes any
+  // presence test, and unfurls as a card with a blank description — the tag is
+  // there, so nothing looks wrong until someone shares the link. Empty and
+  // absent are reported apart because they have different causes: a tag that
+  // never rendered points at the template, a tag that rendered blank points at
+  // the content behind it.
   for (const [name, attr] of REQUIRED) {
-    if (get(name, attr) === undefined) problems.push(`missing ${name}`);
+    const value = get(name, attr);
+    if (value === undefined) problems.push(`missing ${name}`);
+    else if (value.trim() === '') problems.push(`${name} is empty`);
   }
 
   const type = get('og:type');
