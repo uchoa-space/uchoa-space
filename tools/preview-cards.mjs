@@ -10,8 +10,9 @@
 // It reads `dist/` from disk rather than fetching from a running server:
 // `astro preview` serves `dist/` verbatim, so a server and a port would buy
 // nothing, and both checkers already read the build the same way.
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { discoverPages, readMeta } from './lib/dist-pages.mjs';
 
 const SITE = 'https://uchoa.space/';
 const DIST = 'dist';
@@ -20,29 +21,17 @@ const DIST = 'dist';
 // site. `.preview/` is gitignored.
 const OUT = join('.preview', 'card-preview.html');
 
+// The Open Graph tags carry `property`, the Twitter ones `name`. A missing tag
+// renders as empty rather than as `undefined`, since this is a looking tool:
+// only a missing PNG is fatal here, and `check:og` is what asserts presence.
 const meta = (html, key) => {
   const attr = key.startsWith('og:') || key.startsWith('article:') ? 'property' : 'name';
-  const re = new RegExp(`<meta ${attr}="${key}" content="([^"]*)"`);
-  return (html.match(re)?.[1] ?? '')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&amp;/g, '&');
+  return readMeta(html, key, attr) ?? '';
 };
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const clip = (s, n) => (s.length <= n ? esc(s) : esc(s.slice(0, n)) + '<i class="cut">…</i>');
 
-// Discovered, not hard-coded, so a new post shows up here without editing this
-// file — the same rule tools/check-og-tags.mjs follows.
-const pages = [join(DIST, 'index.html')];
-const articlesDir = join(DIST, 'articles');
-if (existsSync(articlesDir)) {
-  for (const slug of readdirSync(articlesDir).sort()) {
-    const file = join(articlesDir, slug, 'index.html');
-    if (existsSync(file)) pages.push(file);
-  }
-}
+const pages = discoverPages(DIST);
 
 const cards = [];
 const problems = [];

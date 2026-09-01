@@ -4,8 +4,9 @@
 // points at is actually in `dist/` — and a card whose image 404s unfurls as a
 // bare URL while the markup looks perfect, which is the exact state this
 // feature exists to leave behind. That check is why this is a script.
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { discoverPages, readMeta } from './lib/dist-pages.mjs';
 
 const SITE = 'https://uchoa.space/';
 const DIST = 'dist';
@@ -31,26 +32,11 @@ const REQUIRED = [
   ['twitter:image:alt', 'name'],
 ];
 
-// Astro's compressHTML puts the whole head on one line, so every read here is
-// a match against the file's text, never a line-oriented one.
-function tag(html, name, attr) {
-  const re = new RegExp(`<meta ${attr}="${name}" content="([^"]*)"`);
-  return html.match(re)?.[1];
-}
-
-// Attribute values arrive HTML-escaped; compare decoded text.
-function decode(s) {
-  return s
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&amp;/g, '&');
-}
-
 function checkPage(file) {
   const html = readFileSync(file, 'utf8');
-  const get = (n, a = 'property') => tag(html, n, a);
+  // Values arrive already entity-decoded, so every comparison below is against
+  // the text a client will actually show.
+  const get = (n, a = 'property') => readMeta(html, n, a);
   const problems = [];
 
   for (const [name, attr] of REQUIRED) {
@@ -109,8 +95,8 @@ function checkPage(file) {
   ]) {
     const alt = get(name, attr);
     if (alt !== undefined) {
-      if (decode(alt).trim() === '') problems.push(`${name} is empty`);
-      else if (decode(alt) === decode(title ?? '')) {
+      if (alt.trim() === '') problems.push(`${name} is empty`);
+      else if (alt === (title ?? '')) {
         problems.push(`${name} only repeats og:title`);
       }
     }
@@ -122,16 +108,7 @@ function checkPage(file) {
   return { file, problems, count, image: localImage ?? image };
 }
 
-const pages = [join(DIST, 'index.html')];
-const articlesDir = join(DIST, 'articles');
-if (existsSync(articlesDir)) {
-  // Discovered, not hard-coded: a new post must be checked without editing
-  // this file.
-  for (const slug of readdirSync(articlesDir).sort()) {
-    const file = join(articlesDir, slug, 'index.html');
-    if (existsSync(file)) pages.push(file);
-  }
-}
+const pages = discoverPages(DIST);
 
 let failed = 0;
 for (const page of pages) {
