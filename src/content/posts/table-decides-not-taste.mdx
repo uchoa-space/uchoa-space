@@ -1,0 +1,91 @@
+---
+title: "The table decides, not taste: choosing a model per rung"
+date: 2026-08-26
+description: "A retrieval ladder for a Rails app, where every rung runs on a different model. How I picked which model sits on which rung, and how I keep that pick from quietly rotting."
+imageAlt: "Share card on a near-black starfield: the title 'The table decides, not taste: choosing a model per rung' above a panel headed 'A/B on rung 2: the bigger model lost', where gpt-oss-20b at grounded 0.76 and $0.00019 is picked out in gold over gpt-oss-120b at grounded 0.73 and $0.00024 in grey."
+---
+
+I built a retrieval "ladder" for a Rails app. A question comes in, the cheapest rung that can answer it with cited sources does, and if none can it climbs. The bottom two rungs cost nothing, an exact-match cache and then local embeddings, so only the top two ever reach a paid model. Ladder shapes are common; what's worth writing down is how I picked which model sits on which paid rung, and how I keep that pick from rotting.
+
+**TL;DR**
+
+- The model on each rung is picked by a table: grounded score against $/answer.
+- The A/B killed the bigger model. It cost more and grounded worse.
+- I wrote the rule for swapping a model before there was a model to swap.
+- Model ids are config, so a vendor shutdown was a one-line fix.
+- Caveat: 27 answers, 2 at the top rung and both grounded 0.0. The run is stale and never reran.
+
+## Three ids, one config file
+
+All three model ids are configuration:
+
+```ruby
+# config/initializers/llm.rb
+Rails.application.config.llm = {
+  # Groq
+  rung_2: { model: "openai/gpt-oss-20b" },
+  # Anthropic
+  rung_3: { model: "claude-sonnet-4-5" },
+  # Anthropic, eval only, never serves an answer
+  judge:  { model: "claude-fable-5", effort: "high" },
+}
+```
+
+Nothing in the retrieval logic names a model. That fact ended up mattering more than the specific ids.
+
+## The first eval table
+
+The temptation is to reach for whichever model "feels" smart enough. I wanted a number. The first metered eval run produced grounded score against dollars per answer, where grounded asks whether the answer cites the source posts it claims to.
+
+| Rung | Model | $/answer |
+| --- | --- | --- |
+| 2 | `openai/gpt-oss-20b` (Groq) | $0.00009 |
+| 3 | `claude-sonnet-4-5` (Anthropic) | $0.00275 |
+| judge | `claude-fable-5`, `effort: high` | eval only, never serves |
+
+Rung 2 landed on `gpt-oss-20b` because it was the cheapest model that still cited its sources: 10 of 10 source hits, grounded 0.9. That's the whole criterion, cheapest thing that clears the grounding bar. Rung 3 costs thirty times as much per answer, which is the whole reason the ladder tries not to get there, and in the run 25 of the 27 answers never did. The judge is stronger than either, because a judge should be strictly stronger than what it grades and here it grades Sonnet.
+
+Then I ran an A/B on rung 2 against its bigger sibling, `gpt-oss-120b`, behind a `VARIANT=large` flag, metering the whole ladder each way.
+
+| Ladder variant | Grounded | $/answer |
+| --- | --- | --- |
+| rung 2 = `gpt-oss-20b` | 0.76 | $0.00019 |
+| rung 2 = `gpt-oss-120b` | 0.73 | $0.00024 |
+| ladder off, rung 3 only | 0.84 | $0.00319 |
+
+The larger model <mark>cost more *and* grounded worse</mark>. No version of "bigger model, just in case" survives that table. The last row is the argument for having a ladder at all: going straight to Sonnet every time buys about nine percent of grounding for an order of magnitude in cost.
+
+## Writing the acceptance rule before the experiment
+
+The part worth stealing sits one step past measuring. I fixed the rule for accepting any *future* swap before there was a swap to accept: change the id, add its price, rerun the evals, accept only if grounded rises by more than $/answer does.
+
+That rules out "this model feels sharper", and it rules out the slower failure mode, the ratchet toward the more expensive model because it can't hurt. Writing the rule down while no model and no incentive is attached is what keeps it honest later. It is also what keeps two obvious candidates off the ladder today.
+
+| Considered | Why it loses now | What would change that |
+| --- | --- | --- |
+| Haiku 4.5 | pricier than rung 2, weaker than rung 3, so it wins neither job | rung 2's source hits drop, fall-throughs pile up, or one vendor becomes an operational requirement |
+| Opus | rung 3 isn't failing | rung 3's grounded falls below target, a question needs synthesis across several posts, or Fable becomes unavailable as judge |
+
+Neither is a no. Both are a not on this table.
+
+## The hedge I'm not going to paper over
+
+<Callout>
+The golden set is small. Twenty-seven answers, only two of which ever reached rung 3. Both scored grounded 0.0, because both were questions the corpus genuinely does not answer. Two data points is not a comparison, and neither of these two is even a fair one.
+</Callout>
+
+Rung 2's numbers are sturdier. The 25 of 27 that never reached rung 3 is the ladder doing its job, and it is also where most of the evidence sits. That's a real first measurement and I'll defend it as one.
+
+<Callout>
+It is also a stale measurement. The run happened under a rung-3 citation rule the ladder no longer applies, and it was never regenerated: the eval file carries a stale marker instead. Nothing here has run under production traffic either. Overclaiming would be exactly the failure mode the table exists to prevent.
+</Callout>
+
+## What configuration-as-data actually bought
+
+The payoff showed up faster than I expected. Rung 2 originally ran on Groq's Llama models, both deprecated on 2026-06-17 and shut down on 2026-08-16. I didn't catch it from a changelog or an outage. A read-only health check, a plain `GET` against `.../models/llama-3.1-8b-instant`, came back 404 before the first metered eval run had even executed.
+
+`Ladder`, the class that walks the rungs, never names a model, so the fix was one line and no retrieval logic was touched. The models a system depends on are unstable, and the cost of one going away should land on a config diff. The other side of that coin: three vendors' ids and prices are now kept current by hand, and the Llama shutdown is proof they go stale without warning.
+
+## Where this leaves the ladder
+
+The rung-2 pick is backed by an A/B and a table that's hard to argue with on its own terms. The rung-3 pick is a placeholder, labeled as one. I wrote the rule for changing either before there was a motive to bend it. The table decides, and it doesn't get to decide on evidence it doesn't have yet.
