@@ -57,15 +57,25 @@ const csp = [
     the LinkedIn feed surface, which drops the description entirely: that
     card now says what the person does rather than only who they are.
 
-    The description is the credential half alone, and the lede is moved up
-    rather than copied up. Left in both, Slack and Discord would print the
-    same sentence twice one line apart — invisible in the markup, obvious
-    the moment a card renders. At 78 characters it also now survives whole
-    on X and WhatsApp, which used to cut it mid-clause and lose the 2026
-    evidence. Do not re-pad it to fill the space. */}
+    The lede is moved up rather than copied up. Left in both, Slack and
+    Discord would print the same sentence twice one line apart — invisible
+    in the markup, obvious the moment a card renders.
+
+    The description is written for Slack, which is where a link to this
+    site actually gets forwarded, and Slack wins where clients conflict.
+    Slack shows roughly 300 characters and renders title and description
+    in full; X and WhatsApp cut somewhere around 90 to 125 and will
+    visibly truncate this. That truncation is an accepted trade, not a
+    defect — writing short enough for the tight clients would spend
+    Slack's room to protect surfaces that matter less here.
+
+    Every clause is taken from the intro paragraph further down this
+    page, so the card asserts nothing the site does not already say. That
+    is the constraint on editing it: a claim gets added to the landing
+    first, and only then to the card. */}
 <ShareMeta
   title="I build AI features where measurement decides what ships."
-  description="Full-stack engineer since 2008; 2026 on RAG, agent runtimes and LLM evaluation."
+  description="Full-stack engineer since 2008; co-founded a real-time platform, 100,000+ users at 99.9% uptime. 2026 on RAG, agent runtimes and LLM evaluation."
   type="website"
   imageAlt={DEFAULT_OG_IMAGE_ALT}
 />
