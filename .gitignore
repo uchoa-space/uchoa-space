@@ -4,6 +4,9 @@
 dist/
 .astro/
 
+# local share-card preview, written by npm run preview:cards
+.preview/
+
 # dependencies
 node_modules/
 

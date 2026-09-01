@@ -81,6 +81,28 @@ card whose image 404s unfurls as a bare URL while the markup looks perfect.
 Neither checker replaces the one check no command can do — pasting the real
 URLs into a real client after a deploy and looking at what unfurls.
 
+### Looking at the cards
+
+```
+npm run build
+npm run preview:cards   # -> .preview/card-preview.html
+open .preview/card-preview.html
+```
+
+Builds one self-contained page showing every card, with its real PNG, under
+four client geometries — Slack/Discord, LinkedIn, X, WhatsApp/iMessage — and
+marks in red where each is likely to cut the title and description. Each
+card's `og:image:alt` is there too, behind a disclosure. It needs a build
+first: it reads `dist/`, and it exits non-zero naming the file if a card's
+PNG is missing from the build rather than rendering a broken image. Output
+goes to `.preview/`, which is gitignored and outside `dist/` so it is never
+published.
+
+The client layouts and the cut points are **approximations** that drift as
+clients change. They show where copy gets cut, not what any client will do.
+Like the checkers, this does not replace pasting the real URLs into a real
+client once the site is deployed.
+
 ## Security
 
 The page ships a strict `Content-Security-Policy` meta tag: `script-src` and

@@ -12,7 +12,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "check:csp": "node tools/check-csp-hashes.mjs",
-    "check:og": "node tools/check-og-tags.mjs"
+    "check:og": "node tools/check-og-tags.mjs",
+    "preview:cards": "node tools/preview-cards.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-satteri": "0.4.0",
