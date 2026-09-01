@@ -21,7 +21,7 @@ const csp = [
   // Two inline scripts, each pinned by hash: the hero-seen check in the head
   // and the year in the footer.
   "script-src 'self' 'sha256-8q7odu0pAI06OJ43B0BzOdsitJ8D2tXb8RjYwR3oDCk=' 'sha256-WeE/AL/NMnjV1YDqJ5wFGyJlLBoKJU2aMtor4SYQZn4='",
-  `style-src 'self' 'sha256-RD39CB1Pp8P09SWpl8IQfOlPQwAn2bjuX/oytreUiRk='${import.meta.env.DEV ? " 'unsafe-inline'" : ''}`,
+  `style-src 'self' 'sha256-jGYWL2YiHuz61wfZzkGznKypTvXGwqjKC5dylIIb4kc='${import.meta.env.DEV ? " 'unsafe-inline'" : ''}`,
   "img-src 'self' data: https://uchoa-space.goatcounter.com",
   `connect-src https://uchoa-space.goatcounter.com${import.meta.env.DEV ? ' ws://localhost:* http://localhost:*' : ''}`,
   "base-uri 'none'",
@@ -343,7 +343,18 @@ const csp = [
 
      Resting state is the finished, filled button. The unfilled look lives
      only in the keyframe's `from`, held through the delay by `backwards`, so
-     a CTA that never animates is simply a filled CTA. */
+     a CTA that never animates is simply a filled CTA.
+
+     The entrance and the fill are one comma-separated `animation` list, and
+     they have to stay that way. `animation` is a shorthand: a second
+     declaration on this element replaces the list, it does not add to it.
+     This selector is (0,2,0) and the entrance rule `.links > *` is (0,1,0),
+     so this one wins the cascade whatever the source order — which is how
+     the button once ended up with the fill and no entrance, fully present
+     in the first painted frame while its two neighbours rose in. The two
+     animations touch disjoint properties (hero-rise does opacity and
+     transform, cta-fill does background-size and color), so composing them
+     costs nothing. Adding a third here means extending this list. */
 
   .links .cta {
     background-color: transparent;
@@ -352,7 +363,9 @@ const csp = [
     background-size: 100% 100%;
     border-color: var(--gold);
     color: var(--text-on-gold);
-    animation: cta-fill 700ms var(--read-cta) ease-out backwards;
+    animation:
+      hero-rise 600ms var(--read-actions) ease-out backwards,
+      cta-fill 700ms var(--read-cta) ease-out backwards;
   }
 
   /* Sets background-image, not the `background` shorthand: the shorthand
@@ -456,7 +469,11 @@ const csp = [
   [data-hero-seen] .wordmark,
   [data-hero-seen] .lede,
   [data-hero-seen] .intro,
-  [data-hero-seen] .links > * {
+  [data-hero-seen] .links > *,
+  /* Listed on its own because `.links .cta` is (0,2,0): a selector that only
+     matched it via `.links > *` would have to out-specify it to switch its
+     animations off, and specificity is exactly what broke this rule once. */
+  [data-hero-seen] .links .cta {
     animation: none;
   }
 
@@ -498,8 +515,13 @@ const csp = [
     html { scroll-behavior: auto; }
     .links a, .links button { transition: none; }
     /* Removing the animation leaves each element on its resting style, which
-       is the finished one — the hero is simply already there. */
-    .wordmark, .lede, .intro, .links > * { animation: none; }
+       is the finished one — the hero is simply already there.
+
+       `.links .cta` is named explicitly for the same reason it is named in
+       the [data-hero-seen] list above: it is (0,2,0) and `.links > *` is
+       (0,1,0), so without it the button kept animating for a reader who had
+       asked the operating system to stop motion. */
+    .wordmark, .lede, .intro, .links > *, .links .cta { animation: none; }
   }
 </style>
 </head>

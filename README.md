@@ -57,14 +57,15 @@ to re-scrape, and it does nothing about the copies already sent.
 
 ## Checks
 
-Two checkers, builtins only, no dependency. Both read `dist/`, so **run
-`npm run build` first, every time**. `dist/` is gitignored: it is what the
-browser receives and it is not what `git diff` shows you.
+Three checkers, no dependency. They all read `dist/`, so **run `npm run build`
+first, every time**. `dist/` is gitignored: it is what the browser receives
+and it is not what `git diff` shows you.
 
 ```
 npm run build
-npm run check:csp   # every inline block's hash is declared in the page's CSP
-npm run check:og    # the share tags, and that the card PNGs are really there
+npm run check:csp     # every inline block's hash is declared in the page's CSP
+npm run check:og      # the share tags, and that the card PNGs are really there
+npm run check:motion  # the hero animates, and stops when asked to
 ```
 
 `check:csp` hashes every inline `<style>` and `<script>` in `dist/index.html`
@@ -78,7 +79,20 @@ is not just a copy of the title. Its most useful assertion is the one no `grep`
 can make: that the PNG each page points at actually exists inside `dist/`. A
 card whose image 404s unfurls as a bare URL while the markup looks perfect.
 
-Neither checker replaces the one check no command can do — pasting the real
+`check:motion` asks a browser what the hero's CSS actually resolves to. It
+copies the built page somewhere throwaway, strips the CSP so a probe script
+can run, and reads back `animation-name` for the wordmark, the lede, the
+intro, a plain link and the CTA — once normally, once under
+`--force-prefers-reduced-motion`. It asserts every element animates in the
+first pass, that the CTA's list still contains the `hero-rise` entrance and
+not only its own fill, and that every element including the CTA goes to
+`none` in the second. It needs headless Chrome, the same binary
+`tools/og/render.sh` uses. Unlike the other two it is a browser check, not a
+text check: the bug it exists for was a specificity accident that was
+invisible in the CSS source and only appeared once a browser had resolved
+the cascade.
+
+No checker replaces the one check no command can do — pasting the real
 URLs into a real client after a deploy and looking at what unfurls.
 
 ### Looking at the cards
