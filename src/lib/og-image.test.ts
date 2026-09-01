@@ -16,8 +16,8 @@
 // below for a reason that has nothing to do with the code under test.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
-import { ogImagePath } from './og-image.ts';
+import { existsSync, readFileSync } from 'node:fs';
+import { DEFAULT_OG_IMAGE_ALT, ogImageAlt, ogImagePath } from './og-image.ts';
 
 // The real published slugs, not invented ones. Each is an MDX filename stem in
 // `src/content/posts/` with matching artwork in `public/assets/og/`. Using the
@@ -46,4 +46,58 @@ test('ogImagePath falls back to the default card for a post with no artwork', ()
 test('ogImagePath falls back to the default card when given no slug', () => {
   // The landing page passes nothing at all.
   assert.equal(ogImagePath(), DEFAULT_CARD);
+});
+
+// --- A1: a post must never announce the card it is not showing --------------
+//
+// `ogImageAlt` returns `DEFAULT_OG_IMAGE_ALT` — a description of the *landing's*
+// wordmark card — whenever `postAlt` is falsy, even when `ogImagePath` just
+// resolved that post to its own artwork. A screen-reader user is then told they
+// are looking at the site wordmark while the card on screen is the post's. That
+// is worse than a generic description, because it reads as handled.
+//
+// This is asserted end-to-end, against the real frontmatter rather than an
+// invented string: the schema in `src/content.config.ts` is what guarantees the
+// field is authored, and a unit test that passed its own literal in would prove
+// nothing about the posts that actually ship. Wiring real content into the real
+// function is the only version of this assertion that can go red for the reason
+// it exists.
+
+// A deliberately tiny reader for one double-quoted YAML scalar in the
+// frontmatter block — the only form this repository uses. Anything else returns
+// undefined, which the assertions below report as a missing alt rather than
+// silently passing. A YAML dependency would buy generality this needs nowhere.
+function frontmatterImageAlt(slug: string): string | undefined {
+  const source = readFileSync(`src/content/posts/${slug}.mdx`, 'utf8');
+  const block = source.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1];
+  if (block === undefined) return undefined;
+  const raw = block.match(/^imageAlt:[ \t]*"((?:[^"\\]|\\.)*)"[ \t]*$/m)?.[1];
+  return raw?.replace(/\\(["\\])/g, '$1');
+}
+
+test('a published post never announces the default wordmark card', () => {
+  for (const slug of PUBLISHED) {
+    const alt = frontmatterImageAlt(slug);
+
+    // Separated so the failure names the cause. A missing field is the A1 bug
+    // the required schema now prevents; a blank one is the hole the schema does
+    // not close, because `z.string()` admits "" and "" is falsy in `ogImageAlt`.
+    assert.ok(
+      alt !== undefined,
+      `${slug}.mdx has no imageAlt in its frontmatter — its card would be described as the landing's wordmark`,
+    );
+    assert.ok(
+      alt.trim() !== '',
+      `${slug}.mdx has a blank imageAlt — a blank alt is falsy, so its card would be described as the landing's wordmark`,
+    );
+
+    // The post resolves to its own artwork, so it must not be described by the
+    // default card's words.
+    assert.notEqual(ogImagePath(slug), DEFAULT_CARD);
+    assert.notEqual(
+      ogImageAlt(slug, alt),
+      DEFAULT_OG_IMAGE_ALT,
+      `${slug} resolves to its own card but is described with the default wordmark alt`,
+    );
+  }
 });

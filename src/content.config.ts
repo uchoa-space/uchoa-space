@@ -12,10 +12,19 @@ const posts = defineCollection({
     date: z.coerce.date(),
     description: z.string(),
     // What that post's share card shows, in words, for a reader who cannot see
-    // it. Optional: a post with no card of its own falls back to the default
-    // card and to the description that matches it, so publishing a post still
-    // costs one file and no artwork.
-    imageAlt: z.string().optional(),
+    // it. Required, and required because it is not verifiable later:
+    // `ogImageAlt` falls back to the default card's description whenever this is
+    // absent, so a post shipping its own artwork without it would tell a
+    // screen-reader user they are looking at the site wordmark — a wrong
+    // description, which reads as handled in a way a generic one does not. The
+    // build is the only place that can still refuse it.
+    //
+    // `.min(1)` is not decoration. `z.string()` alone admits "", and "" is falsy
+    // in `ogImageAlt`, so a blank alt takes the same fallback a missing one
+    // does. Observed: with `imageAlt: ""` the build exited 0 and `check:og`
+    // reported 0 failed, while the article shipped `og:image` pointing at its
+    // own card and `og:image:alt` describing the landing's wordmark.
+    imageAlt: z.string().min(1),
   }),
 });
 
