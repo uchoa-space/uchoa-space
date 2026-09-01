@@ -51,9 +51,21 @@ const csp = [
 
     No slug, so the resolver returns the default card, and its alt is the one
     written from looking at that PNG rather than a second copy invented here. */}
+{/* The lede is the title, not the name. og:site_name and the wordmark in the
+    card image both already say whose site this is, so a title of "Rafael
+    Uchoa" spent the most prominent line repeating them. It matters most on
+    the LinkedIn feed surface, which drops the description entirely: that
+    card now says what the person does rather than only who they are.
+
+    The description is the credential half alone, and the lede is moved up
+    rather than copied up. Left in both, Slack and Discord would print the
+    same sentence twice one line apart — invisible in the markup, obvious
+    the moment a card renders. At 78 characters it also now survives whole
+    on X and WhatsApp, which used to cut it mid-clause and lose the 2026
+    evidence. Do not re-pad it to fill the space. */}
 <ShareMeta
-  title="Rafael Uchoa"
-  description="I build AI features where measurement decides what ships. Full-stack engineer since 2008; 2026 on RAG, agent runtimes and LLM evaluation."
+  title="I build AI features where measurement decides what ships."
+  description="Full-stack engineer since 2008; 2026 on RAG, agent runtimes and LLM evaluation."
   type="website"
   imageAlt={DEFAULT_OG_IMAGE_ALT}
 />

@@ -421,7 +421,7 @@ means asking each platform to re-scrape.
 - [ ] LinkedIn Post Inspector (`https://www.linkedin.com/post-inspector/`) run against `https://uchoa.space/`, `https://uchoa.space/articles/table-decides-not-taste/` and `https://uchoa.space/articles/judge-must-not-share-ancestry/`. Each renders title, description and the correct large image
 - [ ] The same three URLs pasted into one real chat client each unfurl with the large card, not the small one and not a bare URL
 - [ ] Each article shows *its own* image, not the default — the failure this catches is a slug typo, and it looks fine in the markup
-- [ ] The landing's description is read as it renders, not as it was written: it is 137 characters and some clients truncate earlier. If the credential half is cut everywhere it matters, that is a copy decision to revisit, not a bug to patch
+- [ ] The landing's description is read as it renders, not as it was written. The copy decision this criterion anticipated has already been taken: at 137 characters the credential half was cut on X and lost entirely on WhatsApp, so the lede was promoted to `og:title` and the description trimmed to the credential half alone, 79 characters, which the local preview shows surviving uncut in all four geometries. What is left to check on a real client is whether that holds in practice, and that the title is not itself truncated
 - [ ] Any card found wrong is fixed and re-scraped before the link is shared with anyone
 
 **Verification:**
