@@ -196,8 +196,14 @@
 <main>
   <h1 class="wordmark"><span>Uchoa</span> <span>Space</span></h1>
 
+  <!-- CTA click tracking: count.js binds a listener to every element carrying
+       data-goatcounter-click (see assets/count.js, bind_events), so this needs
+       no extra script and leaves the CSP hash untouched. The clicks arrive as
+       events, listed alongside pageviews in the dashboard. An explicit title is
+       given because the fallback is the element's innerHTML — here, raw SVG. -->
   <nav class="links" aria-label="Profiles">
-    <a href="https://www.linkedin.com/in/uchoaaa" rel="me noopener" target="_blank">
+    <a href="https://www.linkedin.com/in/uchoaaa" rel="me noopener" target="_blank"
+       data-goatcounter-click="cta-linkedin" data-goatcounter-title="CTA: LinkedIn">
       <!-- lucide "linkedin" (ISC) — Figma 6:6 -->
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M16 8C17.5913 8 19.1174 8.63214 20.2426 9.75736C21.3679 10.8826 22 12.4087 22 14V21H18V14C18 13.4696 17.7893 12.9609 17.4142 12.5858C17.0391 12.2107 16.5304 12 16 12C15.4696 12 14.9609 12.2107 14.5858 12.5858C14.2107 12.9609 14 13.4696 14 14V21H10V14C10 12.4087 10.6321 10.8826 11.7574 9.75736C12.8826 8.63214 14.4087 8 16 8Z"/>
@@ -206,7 +212,8 @@
       </svg>
       LinkedIn
     </a>
-    <a href="https://github.com/uuchoaa" rel="me noopener" target="_blank">
+    <a href="https://github.com/uuchoaa" rel="me noopener" target="_blank"
+       data-goatcounter-click="cta-github" data-goatcounter-title="CTA: GitHub">
       <!-- lucide "github" (ISC) — Figma 6:10 -->
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M15 22V18C15.1391 16.7473 14.7797 15.4901 14 14.5C17 14.5 20 12.5 20 9C20.08 7.75 19.73 6.52 19 5.5C19.28 4.35 19.28 3.15 19 2C19 2 18 2 16 3.5C13.36 3 10.64 3 8 3.5C6 2 5 2 5 2C4.7 3.15 4.7 4.35 5 5.5C4.27 6.52 3.92 7.75 4 9C4 12.5 7 14.5 10 14.5C9.61 14.99 9.32 15.55 9.15 16.15C8.98 16.75 8.93 17.38 9 18V22"/>
