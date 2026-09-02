@@ -56,12 +56,12 @@ jobs:
       - name: Build
         run: npm run build
 
-      # The three checkers gate the deploy. A build can succeed while producing
-      # output that is wrong in a way only the built artifact shows — a stale
-      # CSP hash, a blank OG tag, an entrance animation lost to the cascade —
-      # and before this, that shipped unconditionally. No continue-on-error on
-      # any of them: a non-zero exit fails the job, and configure-pages onward
-      # never runs.
+      # The three checkers and the unit suite gate the deploy. A build can
+      # succeed while producing output that is wrong in a way only the built
+      # artifact shows — a stale CSP hash, a blank OG tag, an entrance
+      # animation lost to the cascade — and before this, that shipped
+      # unconditionally. No continue-on-error on any of them: a non-zero exit
+      # fails the job, and configure-pages onward never runs.
       - name: Check CSP hashes
         run: npm run check:csp
 
@@ -80,6 +80,17 @@ jobs:
         run: npm run check:motion
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+
+      # The one gate that reads source rather than dist/. src/lib/ decides what
+      # the share tags say — which card a post falls back to, whether its alt
+      # text is used at all, how long a post claims to take — and a regression
+      # there produces a page the three checkers pass happily: the tags are
+      # present, absolute and pointing at a PNG that exists, they are just
+      # wrong. The same goes for the table-scroll plugin: a table that stops
+      # being wrapped still validates. ci.yml runs this suite on the pull
+      # request; the deploy path is the last place it can be caught.
+      - name: Unit tests
+        run: npm test
 
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
 
