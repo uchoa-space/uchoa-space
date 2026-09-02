@@ -1,0 +1,47 @@
+/* -------------------------------------------------------------------------
+   Type scale — one ramp shared by the hero, the post list and the article
+   shell. Before this file, each grew its own numbers in its own era (hero:
+   raw px in an inline block; post list and article: rem, but never the same
+   rem). Sizes below were snapped from what was already on the page, not
+   invented, then reused instead of restated.
+
+   The article's *prose* (public/assets/article.css, `.prose` rules) is the
+   one deliberate exception: its line-heights are a fixed-rem baseline grid
+   transcribed from the Tailwind Typography plugin (see the note at the top
+   of that file), and mixing that grid with the unitless line-heights below
+   would break it. Prose still borrows the size and weight tokens here.
+   ------------------------------------------------------------------------- */
+
+:root {
+  /* Font sizes */
+  --fs-label: 0.75rem;      /* 12px — uppercase eyebrow labels */
+  --fs-caption: 0.8125rem;  /* 13px — metadata: dates, copyright, tagline, article footer/meta */
+  --fs-small: 0.875rem;     /* 14px — secondary UI: breadcrumb nav, table, code, figcaption */
+  --fs-copy: 0.9375rem;     /* 15px — short-form body copy: hero bio, post description, callout */
+  --fs-body: 1rem;          /* 16px — article prose (mobile), hero nav links */
+  --fs-body-lg: 1.0625rem;  /* 17px — article prose (desktop), post title */
+  --fs-h2: 1.25rem;         /* 20px — article section heading */
+  --fs-lede: clamp(1.125rem, 2.4vw, 1.5rem); /* 18→24px — the hero's opening statement */
+
+  /* Font weights, tied to role rather than to component */
+  --fw-regular: 400;   /* body copy */
+  --fw-medium: 500;    /* metadata / secondary text */
+  --fw-semibold: 600;  /* headings, interactive labels */
+  --fw-bold: 700;       /* article title only */
+
+  /* Line heights (unitless) for UI and short-form copy */
+  --lh-heading: 1.4;
+  --lh-copy: 1.6;
+
+  /* Letter-spacing, tied to role rather than to component */
+  --ls-label: 0.14em;        /* uppercase small labels */
+  --ls-interactive: 0.32px;  /* semibold interactive links/buttons */
+
+  /* Inline text decoration: the hand-drawn marker sweep under <mark>. Lives
+     here, with the other tokens both page types read, because the landing's
+     `.mark` and the article's `.prose mark` want the identical stroke and the
+     payload is ~700 bytes of SVG — restated in two files it is the kind of
+     copy that drifts silently, and one of the two copies sits inside the
+     block the landing's CSP pins by hash. */
+  --mark-underline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 14' preserveAspectRatio='none'%3E%3Cpath d='M3 8.5 C 62 3.5, 118 10.5, 178 5.5 S 258 3.5, 297 7' fill='none' stroke='%23f5c451' stroke-width='3' stroke-linecap='round' opacity='0.85'/%3E%3Cpath d='M9 11.5 C 74 7.5, 140 12.5, 202 8.5 S 268 8, 291 11' fill='none' stroke='%23f5c451' stroke-width='2' stroke-linecap='round' opacity='0.45'/%3E%3C/svg%3E");
+}

@@ -1,0 +1,82 @@
+name: CI
+
+# The gate on the way in. pages.yml runs the same build and the same checkers,
+# but only after a change has already reached main — by then a broken CSP hash
+# or a blank OG tag is a failed deploy, not a failed review. This runs the
+# identical sequence on the pull request instead, and hands the reviewer the
+# built site to look at.
+
+on:
+  pull_request:
+
+# Nothing here writes: no deploy, no comment, no commit. contents: read is what
+# checkout needs and the whole of what this workflow gets. actions/upload-artifact
+# uploads through the runner's own artifact token, not GITHUB_TOKEN, so it needs
+# no scope added here.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+# Actions are pinned to a commit SHA with the version in a trailing comment,
+# for the reasons set out at length in pages.yml. Same convention, same upgrade
+# procedure: `gh api repos/<action>/commits/<tag> --jq .sha`, then replace the
+# SHA and the comment together.
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Check CSP hashes
+        run: npm run check:csp
+
+      - name: Check OG tags
+        run: npm run check:og
+
+      - name: Unit tests
+        run: npm test
+
+      # github.sha on a pull_request is the ephemeral merge commit, which is not
+      # a commit anybody can look up. The head SHA is the one in the PR's own
+      # timeline, so that is what names the artifact. Both values come from the
+      # event payload rather than being interpolated into the script.
+      - id: meta
+        name: Name the review build
+        env:
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: echo "artifact=pr-${PR}-${HEAD_SHA:0:7}-dist" >> "$GITHUB_OUTPUT"
+
+      # Last, and deliberately so: every step above it is a gate, none of them
+      # carries `if: always()` or `continue-on-error`, and a job step that exits
+      # non-zero ends the job. So a reviewer can never download output that
+      # failed its own checkers — a failing run has no artifact at all.
+      #
+      # Seven days because these are throwaway review builds; the default 90
+      # would keep every PR's dist/ around for a quarter. overwrite: true so
+      # re-running a run on the same commit replaces its artifact instead of
+      # failing on the name. if-no-files-found: error so an empty dist/ is a
+      # failure here rather than an empty zip the reviewer discovers later.
+      - name: Upload the built site for review
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ steps.meta.outputs.artifact }}
+          path: dist
+          retention-days: 7
+          overwrite: true
+          if-no-files-found: error

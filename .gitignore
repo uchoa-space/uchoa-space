@@ -1,5 +1,20 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# build output
+dist/
+.astro/
+
+# local share-card preview, written by npm run preview:cards
+.preview/
+
+# dependencies
+node_modules/
+
 # misc
 .DS_Store
+CLAUDE.local.md
 *.pem
+
+# environment variables
+.env
+.env.production

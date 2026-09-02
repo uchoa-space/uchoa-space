@@ -1,0 +1,140 @@
+---
+title: "Your judge must not share ancestry with your author"
+date: 2026-09-01
+description: "If one LLM call drafts and another judges, independent of what, exactly? My answer is weights lineage, enforced in code before any API call goes out."
+imageAlt: "Share card on a near-black starfield: the title 'Your judge must not share ancestry with your author' above a panel headed 'The gate, in code, before any API call', reading 'Independence is weights lineage. Not vendor, not model name.' over a gold line, 'Same family goes to SystemExit, before any API call goes out.'"
+---
+
+I built a pipeline where one LLM call drafts a postmortem and a second judges and revises it. Everyone building one of these says the judge has to be independent. Independent of what, exactly? Making that mean something in code came down to three decisions, and to being blunt about what they didn't solve.
+
+**TL;DR**
+
+- Independence has to be at the level of weights lineage. Vendor and model name don't get you there.
+- I enforce it as a hard fail in code, before any API call goes out.
+- Published research on same-family self-preference bias says the same thing.
+- Requiring a citation raises the floor and stops there. Two holes are still open in mine.
+- Temperature 0 with a fixed seed didn't reproduce, so I compare structurally and over N samples.
+
+## Two model names, one set of ancestors
+
+The obvious move is to stop a model judging its own output and use a different one. That's where most people stop.
+
+My pipeline could call several models served through Groq, and those labels trace back to different weights: one lineage from Meta, another from OpenAI's open-weight releases. A served model's label tells you <mark>who's hosting it, not whose weights it's built from</mark>.
+
+So my rule ignores names and vendors entirely: an explicit map from label to weights lineage, checked before every judged run. If judge and executor resolve to the same family it raises `SystemExit` before any API call goes out, rather than logging a warning and carrying on.
+
+```python
+FAMILY = {
+    "groq-llama70b": "meta",
+    "groq-gpt-oss": "openai",
+    # Placeholders: nothing routes here yet, but a lineage the map
+    # doesn't know is a lineage the gate can't compare.
+    "claude-*": "anthropic",
+    "ollama-gemma*": "google",
+}
+
+
+def assert_cross_family(judge: str, executor: str) -> None:
+    """Run before any API call goes out. An unlisted or mislabeled model
+    breaks on the lookup rather than being caught by the comparison."""
+    if FAMILY[judge] == FAMILY[executor]:
+        raise SystemExit(
+            f"judge {judge} and executor {executor} share a weights lineage"
+        )
+```
+
+<div style="overflow-x:auto;overscroll-behavior-x:contain;margin:2.5rem 0" tabindex="0" role="region" aria-label="Cross-family gate diagram">
+  <svg width="608" height="180" viewBox="0 0 608 180" role="img" aria-labelledby="gate-diagram-title" style="display:block">
+    <title id="gate-diagram-title">Two model labels, the executor and the judge, are each resolved through the FAMILY map to a weights lineage. The two lineages are compared: if they are the same family the run raises SystemExit before any API call goes out, and if they differ the run proceeds.</title>
+
+    <text x="71" y="18" text-anchor="middle" font-size="13" fill="#7b8298">model label</text>
+    <text x="202" y="18" text-anchor="middle" font-size="13" fill="#7b8298">lineage</text>
+    <text x="329" y="18" text-anchor="middle" font-size="13" fill="#7b8298">gate</text>
+    <text x="511" y="18" text-anchor="middle" font-size="13" fill="#7b8298">outcome</text>
+
+    <rect x="4" y="32" width="134" height="48" rx="8" fill="rgba(216, 218, 226, 0.05)" stroke="#4d5468" />
+    <text x="71" y="52" text-anchor="middle" font-size="13" fill="#7b8298">executor</text>
+    <text x="71" y="70" text-anchor="middle" font-size="14" fill="#e6e8ef" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">groq-llama70b</text>
+
+    <rect x="4" y="110" width="134" height="48" rx="8" fill="rgba(216, 218, 226, 0.05)" stroke="#4d5468" />
+    <text x="71" y="130" text-anchor="middle" font-size="13" fill="#7b8298">judge</text>
+    <text x="71" y="148" text-anchor="middle" font-size="14" fill="#e6e8ef" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">groq-gpt-oss</text>
+
+    <path d="M140 56 H145" stroke="#7b8298" fill="none" />
+    <path d="M145 51.5 L152 56 L145 60.5 Z" fill="#7b8298" />
+    <path d="M140 134 H145" stroke="#7b8298" fill="none" />
+    <path d="M145 129.5 L152 134 L145 138.5 Z" fill="#7b8298" />
+
+    <rect x="152" y="32" width="100" height="48" rx="8" fill="rgba(216, 218, 226, 0.05)" stroke="#4d5468" />
+    <text x="202" y="61" text-anchor="middle" font-size="14" fill="#e6e8ef" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">meta</text>
+
+    <rect x="152" y="110" width="100" height="48" rx="8" fill="rgba(216, 218, 226, 0.05)" stroke="#4d5468" />
+    <text x="202" y="139" text-anchor="middle" font-size="14" fill="#e6e8ef" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">openai</text>
+
+    <path d="M254 56 H262 V95 H263" stroke="#7b8298" fill="none" stroke-linejoin="round" />
+    <path d="M254 134 H262 V95 H263" stroke="#7b8298" fill="none" stroke-linejoin="round" />
+    <path d="M263 90.5 L270 95 L263 99.5 Z" fill="#7b8298" />
+
+    <rect x="270" y="71" width="118" height="48" rx="8" fill="rgba(216, 218, 226, 0.05)" stroke="#4d5468" />
+    <text x="329" y="100" text-anchor="middle" font-size="14" fill="#e6e8ef">same family?</text>
+
+    <path d="M390 95 H402 V56 H411" stroke="#7b8298" fill="none" stroke-linejoin="round" />
+    <path d="M411 51.5 L418 56 L411 60.5 Z" fill="#7b8298" />
+    <text x="398" y="50" text-anchor="end" font-size="13" fill="#7b8298">yes</text>
+
+    <path d="M390 95 H402 V134 H411" stroke="#7b8298" fill="none" stroke-linejoin="round" />
+    <path d="M411 129.5 L418 134 L411 138.5 Z" fill="#7b8298" />
+    <text x="398" y="128" text-anchor="end" font-size="13" fill="#7b8298">no</text>
+
+    <rect x="418" y="32" width="186" height="48" rx="8" fill="rgba(245, 196, 81, 0.08)" stroke="#f5c451" />
+    <text x="511" y="53" text-anchor="middle" font-size="14" fill="#f5c451" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">SystemExit</text>
+    <text x="511" y="71" text-anchor="middle" font-size="13" fill="#f5c451">before any API call</text>
+
+    <rect x="418" y="110" width="186" height="48" rx="8" fill="rgba(216, 218, 226, 0.05)" stroke="#4d5468" />
+    <text x="511" y="139" text-anchor="middle" font-size="14" fill="#e6e8ef">the run proceeds</text>
+  </svg>
+</div>
+
+A check that only reads the string in your config file is looking at the wrong thing. My fix is unglamorous, a hand-maintained map where an unlisted model breaks the assertion rather than getting caught by it, and there's a measured effect behind it: [research on self-preference bias in LLM-as-a-judge](https://arxiv.org/abs/2410.21819) finds models rate their own output higher than human evaluators do, and a follow-up on scoring bias finds the effect extends to *family*.
+
+## Where the evidence requirement runs out
+
+Real independence doesn't make the next problem go away.
+
+These postmortems get read cold, months later, by someone who wasn't in the room. Left unconstrained, an LLM will state confident, plausible "key decisions" it can't source, and in a document whose whole value is being a reliable record, an invented decision does more damage than a missing one.
+
+So sourcing is structural rather than requested. Both schemas require a non-empty `evidence` string, and `validate_pm` rejects any draft missing one. When the judge flags a decision as unsourced, the revision step removes it rather than backfilling a plausible source.
+
+That raises a real floor. But a required citation field is not a correct citation, and two holes are still open in mine.
+
+<Callout>
+
+The judge is supposed to verify that the cited evidence actually supports the decision it's attached to, and it doesn't always. I've seen it pair a hash with a claim it doesn't back.
+
+</Callout>
+
+<Callout>
+
+The one I most wanted to fix and didn't. The judge sometimes writes illustrative content into a feedback item's `action` field, something like "e.g., the team should have...", and the revise step copies it verbatim into the document as a real, sourced claim. The fabrication arrives laundered through the judge's own prose, in a field never meant to hold facts, so it never reaches the validator looking unsourced at all.
+
+</Callout>
+
+The frontier moved from "did this claim cite anything" to "does the citation actually say this," and the second question is much harder to check automatically.
+
+## The comparison method you'd reach for first doesn't work here
+
+When you're iterating on a prompt, the instinct is to A/B it the way you'd A/B deterministic code: same input, same seed, temperature 0, diff the outputs. I was already sending seed 42 on every call in anticipation of exactly that.
+
+It doesn't work. Same prompt and seed through Groq, materially different output. That matches what [Thinking Machines Lab documents about nondeterminism in LLM inference](https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference/): batch-size-dependent kernels introduce drift before sampling ever runs, and neither OpenAI's nor Anthropic's `seed` is documented as more than a best effort. Less a Groq quirk than the default behavior of hosted inference.
+
+So I compare structurally instead. Does the output contain a lie, is a given field covered, over N samples read as a distribution. One platform tested, so it's no proof the approach fails everywhere, but reason enough to test the assumption before building a methodology on it.
+
+## Putting the three together
+
+| Decision | What it enforces | What it still misses |
+| --- | --- | --- |
+| Weights-lineage gate | judge and executor cannot share ancestry | a model I forget to add to the map |
+| Required `evidence` | the schema cannot hold an unsourced key decision | whether the citation supports the claim |
+| Structural eval over N samples | comparisons survive nondeterminism | any exact diff between two runs |
+
+None of it is dramatic alone, and the honest version is smaller than the marketing version. What holds it up is that the lineage check runs in code before anything else does, because a guideline in a doc doesn't stop a misconfigured run.

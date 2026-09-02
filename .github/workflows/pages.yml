@@ -1,9 +1,9 @@
 name: Deploy to Pages
 
-# The repository holds more than the site — prototypes/ and walkthrough/ are
-# kept for the record but must not be reachable on the domain. So the job
-# assembles a _site directory with only what the public should get, rather
-# than serving the branch as-is.
+# The repository holds more than the site — src/, tasks/ and the toolchain are
+# kept in git but must not be reachable on the domain. Astro gives that for
+# free: dist/ only ever contains the built pages plus a verbatim copy of
+# public/, so publishing dist/ is the whole guarantee. Nothing is hand-copied.
 
 on:
   push:
@@ -19,6 +19,16 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+# Every action below is pinned to a commit SHA rather than to its tag. A tag is
+# a movable pointer: the owner of an action can repoint v4 at new code, and a
+# workflow that trusts a tag runs whatever it points at that morning, with this
+# repository's contents and a Pages deploy token in scope. All of them are
+# GitHub's own, where this is hardening rather than distrust. The trailing
+# comment on each line is the version the SHA was, and is what to read when
+# upgrading:
+# resolve the new tag with `gh api repos/<action>/commits/<tag> --jq .sha` and
+# replace both the SHA and the comment together.
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -26,19 +36,82 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - name: Assemble the site
-        run: |
-          mkdir -p _site
-          cp index.html CNAME _site/
-          cp -r assets _site/assets
-
-      - uses: actions/configure-pages@v5
-
-      - uses: actions/upload-pages-artifact@v3
+      # Pinned to the exact version the site is developed against locally, via
+      # .nvmrc, so the file a local version manager reads and the version CI
+      # installs cannot drift apart. A major-only pin ('26') let CI pick up a
+      # 26.x that never ran here, and a build that differs silently is the one
+      # kind of difference nothing downstream would catch. package.json's
+      # engines floor (>=22.12.0, Astro 7's requirement) stays a floor; this is
+      # the pin.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          path: _site
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # The two checkers and the unit suite gate the deploy. A build can
+      # succeed while producing output that is wrong in a way only the built
+      # artifact shows — a stale CSP hash, a blank OG tag — and before this,
+      # that shipped unconditionally. No continue-on-error on either of them: a
+      # non-zero exit fails the job, and configure-pages onward never runs.
+      - name: Check CSP hashes
+        run: npm run check:csp
+
+      - name: Check OG tags
+        run: npm run check:og
+
+      # The one gate that reads source rather than dist/. src/lib/ decides what
+      # the share tags say — which card a post falls back to, whether its alt
+      # text is used at all, how long a post claims to take — and a regression
+      # there produces a page the two checkers pass happily: the tags are
+      # present, absolute and pointing at a PNG that exists, they are just
+      # wrong. The same goes for the table-scroll plugin: a table that stops
+      # being wrapped still validates. ci.yml runs this suite on the pull
+      # request; the deploy path is the last place it can be caught.
+      - name: Unit tests
+        run: npm test
+
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
+
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: dist
 
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+
+      # deploy-pages succeeding means Pages accepted the artifact, not that the
+      # domain is serving it. This fetches what a reader would get and asserts
+      # the landing's own heading is in the response: a 404, a redirect to
+      # nothing, an empty body or a stale placeholder fails the run here rather
+      # than waiting for a person to notice. --retry covers the few seconds the
+      # CDN can take to pick the new deploy up; -f turns any non-2xx into a
+      # non-zero exit, and the job's shell runs with -e, so either half failing
+      # fails the job.
+      #
+      # The marker is the heading element, not any of the copy. The lede, the
+      # bio and the CTA text all change with ordinary edits; `<h1
+      # class="wordmark"` does not, and .wordmark carries the landing's own
+      # styling, so it cannot be renamed without a visible design change.
+      #
+      # What this cannot see: a stale CSP hash serves a perfectly good 200 with
+      # this marker in it and still drops the stylesheet in the browser. That
+      # is check:csp's job, above, and it runs before the deploy for exactly
+      # that reason.
+      - name: Smoke check the deployed page
+        env:
+          URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          html=$(curl -sSfL --retry 5 --retry-delay 5 --retry-all-errors "$URL")
+          printf '%s' "$html" | grep -q '<h1 class="wordmark"' || {
+            echo "::error::deployed page at $URL is missing the landing marker"
+            exit 1
+          }
+          echo "OK  $URL served the landing"

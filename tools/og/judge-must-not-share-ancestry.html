@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Share card: Your judge must not share ancestry with your author</title>
+<style>
+    /* Palette and type taken from the live site: the custom properties in
+       src/pages/index.astro's inline <style>, and public/assets/type.css.
+       Nothing here is loaded over the network: the cards must render
+       identically on any machine, so only system fonts are named. */
+    :root {
+      --bg-page: #030410;
+      --gold: #f5c451;
+      --gold-dim: #a9803a;
+      --star: #DFE6FF;
+      --text-primary: #d8dae2;
+      --text-bright: #eef0f6;
+      --text-secondary: #b3b8c6;
+      --text-footer: #7b8298;
+      --ui: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      --display: 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; padding: 0; background: var(--bg-page); }
+
+    /* The screenshot window is exactly 1200x630, so the card is the viewport.
+       overflow:hidden keeps the starfield's slice crop off the page box. */
+    .card {
+      position: relative;
+      width: 1200px;
+      height: 630px;
+      overflow: hidden;
+      background: var(--bg-page);
+      font-family: var(--ui);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* The site's starfield (public/assets/starfield-desktop.svg), inlined so
+       the card renders with no external request. Two departures from the
+       source file, both for this medium: coordinates are rounded to one
+       decimal, and every radius is multiplied by 1.7. At 1200x630, and again
+       at the ~500px a chat client renders a card at, the original sub-pixel
+       stars disappear entirely. */
+    .stars {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.85;
+    }
+
+    /* The gold cast the wordmark's drop-shadow throws on the live hero,
+       carried behind the whole card so the near-black is not flat. */
+    .glow {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(58% 62% at 50% 38%, rgba(245, 196, 81, 0.09), rgba(3, 4, 16, 0) 70%);
+    }
+
+    .content {
+      position: relative;
+      height: 100%;
+      /* 80px on every side: platforms crop a card's edges, and the brief
+         allows nothing readable within 60px of one. */
+      padding: 80px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* --- wordmark ---
+       The rule from src/pages/index.astro, kept intact: live text under the
+       matrix the original canvas rasterised the word with (condense to 86%,
+       slant, stretch 4% taller), hollowed out by text-stroke with the glow
+       around that stroke. */
+    .wordmark {
+      margin: 0;
+      font-family: var(--display);
+      font-weight: 900;
+      letter-spacing: 0.084em;
+      line-height: 1.04;
+      text-transform: uppercase;
+      color: transparent;
+      -webkit-text-stroke: 3px var(--gold);
+      transform: matrix(0.86, 0, -0.16, 1.04, 0, 0);
+      filter:
+        drop-shadow(0 0 7px rgba(245, 196, 81, 0.55))
+        drop-shadow(0 0 20px rgba(245, 196, 81, 0.28));
+    }
+
+    /* --- article card ---
+       Intent decision 3: the card is the article's first deck, so it carries
+       what a deck carries: the title, and the measured number the piece
+       rests on. Layout is a column: the mark it comes from at the top, the
+       claim in the middle, the domain at the foot. */
+    .content { justify-content: space-between; }
+
+    .brand {
+      font-size: 32px;
+      -webkit-text-stroke-width: 1.8px;
+      align-self: flex-start;
+      padding-left: 6px;
+      filter: drop-shadow(0 0 6px rgba(245, 196, 81, 0.45));
+    }
+
+    .body { display: flex; flex-direction: column; gap: 30px; }
+
+    .headline {
+      margin: 0;
+      max-width: 1030px;
+      color: var(--text-bright);
+      font-size: 62px;
+      font-weight: 700;
+      line-height: 1.16;
+      letter-spacing: -0.012em;
+    }
+
+    .rule {
+      width: 96px;
+      height: 3px;
+      background: var(--gold);
+      opacity: 0.8;
+    }
+
+    /* The evidence block. Gold-on-black at 30px so it survives the ~500px
+       width a chat client renders the card at. */
+    .evidence {
+      border: 1px solid rgba(245, 196, 81, 0.34);
+      border-radius: 14px;
+      background: rgba(245, 196, 81, 0.055);
+      padding: 22px 28px 24px;
+    }
+
+    .evidence-label {
+      color: var(--gold-dim);
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .domain {
+      margin: 0;
+      color: var(--text-footer);
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    /* This piece rests on no measured number of its own. Its evidence is
+       cited research and a gate that either fires or does not, so the block
+       carries the rule instead, in the post's own words. Nothing is invented
+       to fill the slot a number would have taken. */
+    .rule-lines {
+      margin: 16px 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      color: var(--text-primary);
+      font-size: 31px;
+      font-weight: 500;
+      line-height: 1.3;
+    }
+
+    .rule-lines .fires { color: var(--gold); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="card">
+  <svg class="stars" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" fill="#DFE6FF" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="582.9" cy="347.5" r="1.65"/><circle cx="1290.0" cy="335.9" r="0.83"/><circle cx="851.4" cy="89.4" r="1.55"/><circle cx="555.8" cy="8.6" r="2.25"/><circle cx="1126.0" cy="452.1" r="2.85"/><circle cx="1285.2" cy="713.0" r="0.90"/>
+    <circle cx="1095.7" cy="594.0" r="1.95"/><circle cx="719.9" cy="610.2" r="1.88"/><circle cx="1284.5" cy="734.0" r="2.15"/><circle cx="143.4" cy="527.1" r="0.73"/><circle cx="549.0" cy="621.8" r="1.42"/><circle cx="1154.1" cy="859.1" r="2.61"/>
+    <circle cx="430.9" cy="466.4" r="2.32"/><circle cx="1158.2" cy="489.2" r="0.92"/><circle cx="402.8" cy="701.1" r="1.93"/><circle cx="98.6" cy="560.9" r="0.78"/><circle cx="179.7" cy="203.2" r="2.18"/><circle cx="320.6" cy="183.6" r="0.78"/>
+    <circle cx="219.7" cy="651.5" r="2.58"/><circle cx="212.0" cy="862.7" r="2.15"/><circle cx="764.9" cy="779.6" r="2.78"/><circle cx="1389.4" cy="258.0" r="2.78"/><circle cx="171.7" cy="888.8" r="2.86"/><circle cx="1096.6" cy="763.7" r="1.39"/>
+    <circle cx="1003.2" cy="116.8" r="2.23"/><circle cx="116.4" cy="663.3" r="1.18"/><circle cx="910.8" cy="536.3" r="2.46"/><circle cx="1055.6" cy="195.6" r="1.53"/><circle cx="1399.9" cy="193.2" r="2.86"/><circle cx="569.3" cy="511.8" r="2.70"/>
+    <circle cx="868.5" cy="667.7" r="0.85"/><circle cx="48.3" cy="26.4" r="1.57"/><circle cx="261.9" cy="32.5" r="2.26"/><circle cx="1048.5" cy="723.9" r="2.45"/><circle cx="434.8" cy="472.7" r="0.75"/><circle cx="1316.7" cy="361.4" r="0.78"/>
+    <circle cx="834.6" cy="647.8" r="2.65"/><circle cx="1001.6" cy="399.1" r="2.89"/><circle cx="828.0" cy="556.0" r="0.87"/><circle cx="1319.5" cy="24.4" r="1.96"/><circle cx="1314.0" cy="730.0" r="1.90"/><circle cx="4.5" cy="310.1" r="2.27"/>
+    <circle cx="173.1" cy="599.5" r="0.75"/><circle cx="303.5" cy="399.6" r="0.71"/><circle cx="336.4" cy="9.9" r="2.09"/><circle cx="856.9" cy="807.8" r="1.50"/><circle cx="1424.8" cy="416.6" r="1.98"/><circle cx="1143.3" cy="151.3" r="2.60"/>
+    <circle cx="910.7" cy="498.6" r="2.60"/><circle cx="927.5" cy="641.2" r="2.09"/><circle cx="477.0" cy="589.2" r="1.66"/><circle cx="1362.0" cy="811.2" r="1.75"/><circle cx="37.7" cy="87.8" r="1.97"/><circle cx="393.8" cy="820.5" r="2.85"/>
+    <circle cx="1129.2" cy="228.0" r="0.83"/><circle cx="504.3" cy="299.1" r="1.02"/><circle cx="561.2" cy="324.8" r="1.26"/><circle cx="8.3" cy="819.3" r="2.86"/><circle cx="143.2" cy="674.2" r="0.78"/><circle cx="229.7" cy="594.1" r="0.74"/>
+    <circle cx="570.1" cy="402.4" r="1.71"/><circle cx="117.3" cy="186.7" r="1.12"/><circle cx="436.3" cy="511.4" r="0.95"/><circle cx="185.5" cy="699.8" r="1.37"/><circle cx="182.5" cy="430.9" r="0.96"/><circle cx="1021.6" cy="579.3" r="1.99"/>
+    <circle cx="880.9" cy="774.6" r="1.31"/><circle cx="725.1" cy="225.7" r="0.94"/><circle cx="181.1" cy="58.5" r="1.66"/><circle cx="1150.9" cy="448.7" r="2.00"/><circle cx="243.9" cy="822.4" r="2.80"/><circle cx="17.2" cy="615.5" r="1.26"/>
+    <circle cx="1335.9" cy="157.3" r="2.86"/><circle cx="101.6" cy="39.6" r="1.85"/><circle cx="179.4" cy="388.2" r="1.51"/><circle cx="965.8" cy="607.5" r="2.09"/><circle cx="144.0" cy="325.1" r="0.82"/><circle cx="47.1" cy="855.1" r="1.40"/>
+    <circle cx="1282.4" cy="852.7" r="2.11"/><circle cx="96.7" cy="450.8" r="1.15"/><circle cx="809.1" cy="237.5" r="2.81"/><circle cx="49.8" cy="631.2" r="2.11"/><circle cx="615.6" cy="427.1" r="1.08"/><circle cx="585.5" cy="249.2" r="1.52"/>
+    <circle cx="459.4" cy="47.6" r="2.70"/><circle cx="995.2" cy="773.1" r="1.87"/><circle cx="350.6" cy="631.4" r="1.87"/><circle cx="1375.2" cy="435.4" r="2.42"/><circle cx="1233.5" cy="459.1" r="1.74"/><circle cx="731.8" cy="328.6" r="1.73"/>
+    <circle cx="532.6" cy="749.4" r="1.43"/><circle cx="131.4" cy="889.1" r="1.74"/><circle cx="1314.0" cy="183.6" r="2.22"/><circle cx="800.0" cy="223.8" r="0.89"/><circle cx="504.6" cy="357.2" r="2.50"/><circle cx="233.4" cy="258.1" r="1.96"/>
+    <circle cx="729.4" cy="558.9" r="1.44"/><circle cx="501.4" cy="508.1" r="1.57"/><circle cx="293.0" cy="857.6" r="0.99"/><circle cx="1268.5" cy="235.6" r="2.21"/><circle cx="1391.0" cy="729.9" r="1.99"/><circle cx="287.5" cy="758.7" r="1.23"/>
+    <circle cx="1238.7" cy="166.1" r="1.50"/><circle cx="1270.1" cy="246.5" r="0.95"/><circle cx="1240.4" cy="430.6" r="2.29"/><circle cx="285.3" cy="1.8" r="2.27"/><circle cx="533.0" cy="41.8" r="2.33"/><circle cx="241.2" cy="114.1" r="2.36"/>
+    <circle cx="1130.9" cy="140.1" r="2.15"/><circle cx="39.7" cy="490.3" r="2.18"/><circle cx="93.6" cy="766.0" r="1.21"/><circle cx="694.9" cy="182.2" r="0.96"/><circle cx="266.6" cy="603.5" r="1.90"/><circle cx="196.7" cy="771.8" r="1.18"/>
+    <circle cx="483.3" cy="547.5" r="1.13"/><circle cx="1174.1" cy="18.5" r="2.63"/><circle cx="784.7" cy="488.2" r="2.84"/><circle cx="559.9" cy="722.6" r="0.81"/><circle cx="1394.6" cy="470.3" r="1.35"/><circle cx="1344.6" cy="141.6" r="2.13"/>
+    <circle cx="25.4" cy="168.4" r="1.97"/><circle cx="1430.7" cy="839.6" r="2.09"/><circle cx="450.7" cy="648.3" r="1.02"/><circle cx="1229.0" cy="368.6" r="1.01"/><circle cx="838.2" cy="198.5" r="0.69"/><circle cx="211.5" cy="841.2" r="2.19"/>
+    <circle cx="1388.7" cy="330.1" r="1.83"/><circle cx="2.5" cy="582.1" r="2.10"/><circle cx="779.8" cy="52.5" r="1.65"/><circle cx="489.1" cy="281.8" r="2.14"/><circle cx="692.5" cy="377.6" r="2.74"/><circle cx="1122.9" cy="259.7" r="2.43"/>
+    <circle cx="1252.3" cy="697.3" r="0.99"/><circle cx="496.5" cy="805.8" r="0.94"/><circle cx="1094.9" cy="765.5" r="1.59"/><circle cx="388.8" cy="684.6" r="2.79"/><circle cx="862.9" cy="43.9" r="2.13"/><circle cx="567.3" cy="518.7" r="1.63"/>
+    <circle cx="832.1" cy="55.9" r="1.07"/><circle cx="88.0" cy="70.6" r="1.86"/><circle cx="1359.0" cy="698.4" r="1.01"/><circle cx="1101.3" cy="648.0" r="1.67"/><circle cx="327.6" cy="217.4" r="2.42"/><circle cx="1013.8" cy="159.6" r="2.48"/>
+    <circle cx="1433.3" cy="632.9" r="0.93"/><circle cx="1300.4" cy="235.5" r="0.96"/><circle cx="1259.7" cy="92.7" r="2.08"/><circle cx="978.3" cy="379.1" r="1.44"/><circle cx="38.0" cy="823.0" r="1.13"/><circle cx="1135.4" cy="617.3" r="2.08"/>
+    <circle cx="796.6" cy="215.2" r="2.08"/><circle cx="1134.9" cy="270.2" r="1.19"/><circle cx="956.0" cy="619.2" r="2.54"/><circle cx="1173.6" cy="411.7" r="1.53"/><circle cx="512.9" cy="575.3" r="0.96"/><circle cx="1171.9" cy="443.1" r="1.22"/>
+    <circle cx="1024.3" cy="507.0" r="2.51"/><circle cx="830.0" cy="378.0" r="1.97"/><circle cx="210.4" cy="729.6" r="1.78"/><circle cx="743.2" cy="678.0" r="1.95"/><circle cx="568.8" cy="538.3" r="1.94"/><circle cx="1029.0" cy="381.1" r="1.28"/>
+    <circle cx="593.7" cy="521.0" r="1.81"/><circle cx="408.5" cy="214.6" r="1.65"/><circle cx="462.9" cy="57.4" r="1.36"/><circle cx="1413.6" cy="747.4" r="1.44"/><circle cx="1267.5" cy="460.5" r="2.33"/><circle cx="665.1" cy="201.3" r="0.81"/>
+    <circle cx="336.2" cy="193.2" r="2.56"/><circle cx="93.3" cy="598.6" r="0.86"/>
+  </svg>
+  <div class="glow"></div>
+  <div class="content">
+    <p class="wordmark brand">Rafael Uchoa</p>
+    <div class="body">
+      <h1 class="headline">Your judge must not share ancestry with your author</h1>
+      <div class="rule"></div>
+      <div class="evidence">
+        <p class="evidence-label" style="margin:0">The gate, in code, before any API call</p>
+        <div class="rule-lines">
+          <span>Independence is weights lineage. Not vendor, not model name.</span>
+          <span class="fires">Same family &rarr; SystemExit, before any API call goes out.</span>
+        </div>
+      </div>
+    </div>
+    <p class="domain">uchoa.space</p>
+  </div>
+</div>
+</body>
+</html>

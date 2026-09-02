@@ -1,0 +1,24 @@
+{
+  "name": "uchoa-space",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "check:csp": "node tools/check-csp-hashes.mjs",
+    "check:og": "node tools/check-og-tags.mjs",
+    "preview:cards": "node tools/preview-cards.mjs",
+    "test": "node --test 'src/lib/**/*.test.{ts,mjs}'"
+  },
+  "dependencies": {
+    "@astrojs/markdown-satteri": "0.4.0",
+    "@astrojs/mdx": "8.0.0",
+    "astro": "7.2.10"
+  }
+}

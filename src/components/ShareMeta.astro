@@ -1,0 +1,58 @@
+---
+import { ogImagePath } from '../lib/og-image';
+
+interface Props {
+  title: string;
+  description: string;
+  type: 'website' | 'article';
+  /** MDX filename stem. Omitted on the landing, which takes the default card. */
+  slug?: string;
+  /** What the card shows, in words. The card's own text is pixels. */
+  imageAlt: string;
+  /** Articles only. The post's frontmatter date. */
+  publishedTime?: Date;
+}
+
+const { title, description, type, slug, imageAlt, publishedTime } = Astro.props;
+
+// Built from Astro.site, never hand-written: every one of these must be
+// absolute or a scraper resolves it against its own host and gets nothing.
+//
+// Astro.url.pathname and not Astro.url: links to this site are hand-delivered
+// and may carry a ?ref= channel tag. A scraper that follows one has to be told
+// the clean canonical, or the same page caches as several distinct cards on
+// the same platform.
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+const imageUrl = new URL(ogImagePath(slug), Astro.site).href;
+---
+{/*
+  This component emits meta elements and nothing else: no style element, no
+  script element, no stylesheet link. That is a hard property, not a
+  preference. The landing's CSP pins SHA-256 hashes of its inline blocks, so an
+  inline block arriving from here would be unhashed and the browser would drop
+  the page's own stylesheet. Keep it meta-only and it is safe in any head.
+
+  The grep that proves this looks for an opening style, script or link tag in
+  this file, so those three words stay unbracketed here — a comment that spells
+  them as tags would trip the check and it could never fail.
+
+  One tag per line here, but not in `dist/`: Astro's compressHTML collapses the
+  whitespace between them, so the whole head lands on one line. A check on the
+  built output must count matches, not lines.
+*/}
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:type" content={type} />
+<meta property="og:url" content={canonicalUrl} />
+<meta property="og:image" content={imageUrl} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={imageAlt} />
+<meta property="og:site_name" content="Rafael Uchoa" />
+<meta property="og:locale" content="en_US" />
+{publishedTime && <meta property="article:published_time" content={publishedTime.toISOString()} />}
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={imageUrl} />
+<meta name="twitter:image:alt" content={imageAlt} />
