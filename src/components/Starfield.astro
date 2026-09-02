@@ -5,6 +5,13 @@
  * A <picture> with a media-scoped <source> so the preload scanner only ever
  * fetches one SVG — a display:none pair on plain <img>s still downloads both.
  *
+ * fetchpriority="high" on the <img> raises that one request out of the default
+ * priority images start at, where it queues behind the render-blocking
+ * stylesheets. It belongs on the <img>, not the <source>: the <source> only
+ * chooses the URL, and the <img> is the element that carries the request and
+ * every attribute governing it. The hint applies to whichever variant the
+ * media query selected, so it does not reintroduce the second download.
+ *
  * The paths are absolute because this renders on `/` and on
  * `/articles/<slug>/` alike, and the site is published at an apex domain with
  * no base path (see astro.config.mjs).
@@ -18,5 +25,11 @@
 
 <picture class="sky-wrap">
   <source srcset="/assets/starfield-desktop.svg" media="(min-width: 640px)" />
-  <img class="sky" src="/assets/starfield-mobile.svg" alt="" aria-hidden="true" />
+  <img
+    class="sky"
+    src="/assets/starfield-mobile.svg"
+    alt=""
+    aria-hidden="true"
+    fetchpriority="high"
+  />
 </picture>
