@@ -1,7 +1,11 @@
-# uchoa.space
+# https://uchoa.space
 
-A landing page — a wordmark on a starfield, and links to LinkedIn and GitHub —
+A landing page (a wordmark on a starfield, and links to LinkedIn and GitHub)
 plus a small blog under `/articles/`.
+
+<img width="1159" height="1061" alt="home" src="https://github.com/user-attachments/assets/aa0cb7d3-1afa-48c8-a490-8ca5d1dd34a8" />
+<img width="1159" height="1061" alt="an-article" src="https://github.com/user-attachments/assets/e5311872-f9e1-4559-a5ba-bf9d3de2128a" />
+
 
 The site is built with [Astro](https://astro.build), static output only. The
 landing itself is still plain HTML with its own inline stylesheet — Astro
@@ -22,6 +26,10 @@ npm install
 npm run build     # -> dist/
 npm run preview   # serve dist/ locally
 ```
+
+<img width="1159" height="1061" alt="lighthouse-metrics-01" src="https://github.com/user-attachments/assets/9daf3acb-fdaa-4129-a860-ed9706e96086" />
+<img width="1159" height="1061" alt="lighthouse-metrics-02" src="https://github.com/user-attachments/assets/e3269b8c-d763-4ff2-a1f7-f7f893c1746a" />
+
 
 ## Publishing
 
@@ -54,6 +62,9 @@ one file, and forgetting the artwork is safe.
 **Settle a page's card before its link is circulated.** Platforms cache a card
 hard once they have scraped it; fixing it afterwards means asking each platform
 to re-scrape, and it does nothing about the copies already sent.
+
+<img width="3000" height="3500" alt="share-cards-preview" src="https://github.com/user-attachments/assets/c6623d0d-a286-4903-9043-22bde242e52b" />
+
 
 ## Checks
 
