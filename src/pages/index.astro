@@ -122,7 +122,7 @@ const csp = [
 <link rel="stylesheet" href="assets/type.css" />
 <link rel="stylesheet" href="assets/sky.css" />
 <link rel="stylesheet" href="assets/a11y.css" />
-<link rel="stylesheet" href="assets/posts.css" />
+{hasPosts && <link rel="stylesheet" href="assets/posts.css" />}
 <!-- is:inline on this block and on the two script tags below is load-bearing,
      not a style choice. Without it Astro scopes and bundles the CSS into an
      external file and rewrites the inline JS, changing the very bytes the CSP
