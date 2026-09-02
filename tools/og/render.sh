@@ -15,11 +15,44 @@
 
 set -eu
 
-CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+# CHROME_PATH (or CHROME) wins; with neither set the first candidate that exists
+# is used — the macOS path first, so this machine behaves exactly as before,
+# then the usual Linux install locations. Newline-separated because the macOS
+# path contains a space.
+CHROME_CANDIDATES="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+/usr/bin/google-chrome
+/usr/bin/google-chrome-stable
+/usr/bin/chromium-browser
+/usr/bin/chromium"
+
 HERE=$(cd "$(dirname "$0")" && pwd)
 OUT=$(cd "$HERE/../../public/assets/og" && pwd)
 
-[ -x "$CHROME" ] || { echo "Chrome not found at $CHROME" >&2; exit 1; }
+# A subshell function, so setting IFS to a newline here cannot leak into the
+# whitespace-split loop over $CARDS below.
+first_existing_chrome() (
+  IFS="
+"
+  for candidate in $CHROME_CANDIDATES; do
+    if [ -x "$candidate" ]; then printf '%s\n' "$candidate"; return 0; fi
+  done
+  return 1
+)
+
+CHROME="${CHROME_PATH:-${CHROME:-}}"
+if [ -n "$CHROME" ]; then
+  [ -x "$CHROME" ] || {
+    echo "Chrome not found at $CHROME (from CHROME_PATH/CHROME)" >&2
+    exit 1
+  }
+else
+  CHROME=$(first_existing_chrome) || {
+    echo "Chrome not found; tried:" >&2
+    echo "$CHROME_CANDIDATES" >&2
+    echo "set CHROME_PATH to point at one" >&2
+    exit 1
+  }
+fi
 
 if [ "$#" -gt 0 ]; then
   CARDS="$*"

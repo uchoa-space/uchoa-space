@@ -25,7 +25,27 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { execFileSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+// Where Chrome lives is the one thing about this check that is not portable, so
+// it is the one thing that can be overridden: CHROME_PATH (or CHROME) wins, and
+// with neither set the first candidate that exists is used — the macOS path
+// first, so a developer machine behaves exactly as it did before, then the
+// usual Linux install locations so a CI runner can run this at all.
+const CHROME_CANDIDATES = [
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/usr/bin/google-chrome',
+  '/usr/bin/google-chrome-stable',
+  '/usr/bin/chromium-browser',
+  '/usr/bin/chromium',
+];
+
+function resolveChrome() {
+  const override = process.env.CHROME_PATH || process.env.CHROME;
+  const source = process.env.CHROME_PATH ? 'CHROME_PATH' : 'CHROME';
+  if (override) return { path: override, source };
+  return { path: CHROME_CANDIDATES.find((candidate) => existsSync(candidate)), source: null };
+}
+
+const chrome = resolveChrome();
 const PAGE = join('dist', 'index.html');
 // Under the gitignored preview directory, never inside dist/: dist/ is uploaded
 // to GitHub Pages wholesale, and this copy has had its CSP removed.
@@ -46,8 +66,13 @@ if (!existsSync(PAGE)) {
   console.log(`FAIL ${PAGE} — not built, run npm run build first`);
   process.exit(1);
 }
-if (!existsSync(CHROME)) {
-  console.log(`FAIL headless Chrome not found at ${CHROME}`);
+if (!chrome.path || !existsSync(chrome.path)) {
+  console.log(
+    chrome.source
+      ? `FAIL headless Chrome not found at ${chrome.path} (from ${chrome.source})`
+      : `FAIL headless Chrome not found; tried ${CHROME_CANDIDATES.join(', ')} — ` +
+          'set CHROME_PATH to point at one',
+  );
   process.exit(1);
 }
 
@@ -91,7 +116,7 @@ function probe({ reducedMotion = false, heroSeen = false } = {}) {
   if (reducedMotion) args.push('--force-prefers-reduced-motion');
   args.push('file://' + resolve(PROBE) + (heroSeen ? '#hero-seen' : ''));
   // Chrome writes harmless task_policy_set noise to stderr; ignore it.
-  const dom = execFileSync(CHROME, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  const dom = execFileSync(chrome.path, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   const block = dom.match(/<pre id="motion-probe">([\s\S]*?)<\/pre>/)?.[1] ?? '';
   const seen = new Map();
   for (const line of block.split('\n')) {
