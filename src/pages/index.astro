@@ -21,7 +21,7 @@ const csp = [
   // Two inline scripts, each pinned by hash: the hero-seen check in the head
   // and the year in the footer.
   "script-src 'self' 'sha256-8q7odu0pAI06OJ43B0BzOdsitJ8D2tXb8RjYwR3oDCk=' 'sha256-WeE/AL/NMnjV1YDqJ5wFGyJlLBoKJU2aMtor4SYQZn4='",
-  `style-src 'self' 'sha256-6NsMAlasR0R65x1Ml+Vxr5ef4ZFexLbvx2KAEUQ1zOo='${import.meta.env.DEV ? " 'unsafe-inline'" : ''}`,
+  `style-src 'self' 'sha256-5adhzVdBKQVo0Xim0/VJ3tVk5VXud260zP7IyaWSz0k='${import.meta.env.DEV ? " 'unsafe-inline'" : ''}`,
   "img-src 'self' data: https://uchoa-space.goatcounter.com",
   `connect-src https://uchoa-space.goatcounter.com${import.meta.env.DEV ? ' ws://localhost:* http://localhost:*' : ''}`,
   "base-uri 'none'",
@@ -447,6 +447,18 @@ const csp = [
     from { opacity: 0; transform: translateY(10px); }
   }
 
+  /* Offset only, no opacity. .intro is the measured Largest Contentful Paint
+     element (record: .preview/lcp-measurement.md), and `backwards` holding it
+     at opacity: 0 through its 2400ms delay was what put LCP at ~3050ms — the
+     browser does not count an element at opacity: 0 as painted. Painting it
+     opaque from the first frame and animating only the offset keeps its step
+     in the sequence and takes it off the critical path. Only .intro gets this
+     treatment: .wordmark measured as producing no LCP entry at all on a first
+     visit, so exempting it would be a regression rather than a fix. */
+  @keyframes hero-slide {
+    from { transform: translateY(10px); }
+  }
+
   /* Opacity only. This element's resting transform is the matrix that
      condenses and slants the letters, and a translate in the keyframe would
      replace it rather than compose with it. */
@@ -459,7 +471,7 @@ const csp = [
   }
 
   .intro {
-    animation: hero-rise 600ms var(--read-bio) ease-out backwards;
+    animation: hero-slide 600ms var(--read-bio) ease-out backwards;
   }
 
   .links > * {
