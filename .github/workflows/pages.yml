@@ -38,11 +38,16 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      # Pinned to the major version the site is developed against locally.
-      # Astro 7 requires >=22.12.0; a drift here is a drift in the output.
+      # Pinned to the exact version the site is developed against locally, via
+      # .nvmrc, so the file a local version manager reads and the version CI
+      # installs cannot drift apart. A major-only pin ('26') let CI pick up a
+      # 26.x that never ran here, and a build that differs silently is the one
+      # kind of difference nothing downstream would catch. package.json's
+      # engines floor (>=22.12.0, Astro 7's requirement) stays a floor; this is
+      # the pin.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: '26'
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
