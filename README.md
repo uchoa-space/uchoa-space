@@ -95,6 +95,22 @@ text check: the bug it exists for was a specificity accident that was
 invisible in the CSS source and only appeared once a browser had resolved
 the cascade.
 
+Both of those want a local Chrome or Chromium, and neither bundles one. Each
+reads `CHROME_PATH` (or `CHROME`) first; with neither set it takes the first
+of the macOS application path, `/usr/bin/google-chrome`,
+`google-chrome-stable`, `chromium-browser` and `chromium` that exists, which
+is what lets `check:motion` run on Linux and on a CI runner. Point the
+variable at a binary if yours lives anywhere else:
+
+```
+CHROME_PATH=/path/to/chrome npm run check:motion
+```
+
+`tools/og/render.sh` stays macOS-only even so: it verifies every card is
+exactly 1200x630 with `sips`, which ships with macOS and nowhere else. It is
+needed only to redraw a card's PNG, so nothing in the build, the three
+checkers, or the card preview is blocked by it.
+
 No checker replaces the one check no command can do — pasting the real
 URLs into a real client after a deploy and looking at what unfurls.
 
