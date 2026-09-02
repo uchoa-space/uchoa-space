@@ -21,7 +21,7 @@ const csp = [
   // Two inline scripts, each pinned by hash: the hero-seen check in the head
   // and the year in the footer.
   "script-src 'self' 'sha256-8q7odu0pAI06OJ43B0BzOdsitJ8D2tXb8RjYwR3oDCk=' 'sha256-WeE/AL/NMnjV1YDqJ5wFGyJlLBoKJU2aMtor4SYQZn4='",
-  `style-src 'self' 'sha256-5adhzVdBKQVo0Xim0/VJ3tVk5VXud260zP7IyaWSz0k='${import.meta.env.DEV ? " 'unsafe-inline'" : ''}`,
+  `style-src 'self' 'sha256-Ze6o7k+Qon/F2pVdlU6zaaiO7TpNdwmgYAMtI+4q7nc='${import.meta.env.DEV ? " 'unsafe-inline'" : ''}`,
   "img-src 'self' data: https://uchoa-space.goatcounter.com",
   `connect-src https://uchoa-space.goatcounter.com${import.meta.env.DEV ? ' ws://localhost:* http://localhost:*' : ''}`,
   "base-uri 'none'",
@@ -429,14 +429,23 @@ const csp = [
      (The marker's own sweep would belong just after --read-bio. It is static
      for now: animating it failed twice and the cause was never found.) */
 
+  /* The whole scale was multiplied by 5/12 once the bio was measured to be
+     the page's Largest Contentful Paint element (record:
+     .preview/lcp-measurement.md): `backwards` holds it at opacity: 0 for the
+     whole delay, and a browser does not count an element at opacity: 0 as
+     painted, so --read-bio *is* the LCP time. The fade stays — it is part of
+     the choreography, not decoration — so the delays move instead. 5/12 is
+     the factor that puts --read-bio on 1000ms and happens to leave every
+     other step on a whole millisecond, so the gaps keep their 3 : 5 : 4
+     proportion exactly and the sequence still reads as a sequence. */
   :root {
     --read-name: 0ms;
-    --read-line: 900ms;
-    --read-bio: 2400ms;
-    --read-actions: 3600ms;
-    /* The buttons finish arriving at 3600 + 600. This waits past that, long
+    --read-line: 375ms;
+    --read-bio: 1000ms;
+    --read-actions: 1500ms;
+    /* The buttons finish arriving at 1500 + 600. This waits past that, long
        enough for the reader to have run out of page. */
-    --read-cta: 5400ms;
+    --read-cta: 2250ms;
   }
 
   @keyframes hero-fade {
@@ -445,18 +454,6 @@ const csp = [
 
   @keyframes hero-rise {
     from { opacity: 0; transform: translateY(10px); }
-  }
-
-  /* Offset only, no opacity. .intro is the measured Largest Contentful Paint
-     element (record: .preview/lcp-measurement.md), and `backwards` holding it
-     at opacity: 0 through its 2400ms delay was what put LCP at ~3050ms — the
-     browser does not count an element at opacity: 0 as painted. Painting it
-     opaque from the first frame and animating only the offset keeps its step
-     in the sequence and takes it off the critical path. Only .intro gets this
-     treatment: .wordmark measured as producing no LCP entry at all on a first
-     visit, so exempting it would be a regression rather than a fix. */
-  @keyframes hero-slide {
-    from { transform: translateY(10px); }
   }
 
   /* Opacity only. This element's resting transform is the matrix that
@@ -471,7 +468,7 @@ const csp = [
   }
 
   .intro {
-    animation: hero-slide 600ms var(--read-bio) ease-out backwards;
+    animation: hero-rise 600ms var(--read-bio) ease-out backwards;
   }
 
   .links > * {
