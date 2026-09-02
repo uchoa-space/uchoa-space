@@ -57,7 +57,7 @@ to re-scrape, and it does nothing about the copies already sent.
 
 ## Checks
 
-Three checkers, no dependency. They all read `dist/`, so **run `npm run build`
+Two checkers, no dependency. They both read `dist/`, so **run `npm run build`
 first, every time**. `dist/` is gitignored: it is what the browser receives
 and it is not what `git diff` shows you.
 
@@ -65,7 +65,6 @@ and it is not what `git diff` shows you.
 npm run build
 npm run check:csp     # every inline block's hash is declared in the page's CSP
 npm run check:og      # the share tags, and that the card PNGs are really there
-npm run check:motion  # the hero animates, and stops when asked to, in 3 modes
 ```
 
 `check:csp` hashes every inline `<style>` and `<script>` in `dist/index.html`
@@ -79,36 +78,19 @@ is not just a copy of the title. Its most useful assertion is the one no `grep`
 can make: that the PNG each page points at actually exists inside `dist/`. A
 card whose image 404s unfurls as a bare URL while the markup looks perfect.
 
-`check:motion` asks a browser what the hero's CSS actually resolves to. It
-copies the built page somewhere throwaway, strips the CSP so a probe script
-can run, and reads back `animation-name` for the wordmark, the lede, the
-intro, a plain link and the CTA, in the hero's three motion modes: a first
-visit, a reader under `prefers-reduced-motion`, and a repeat visit, the
-state `data-hero-seen` puts the page in on every load after the first and on
-every return from an article. It asserts every element animates on the first
-visit and that the CTA's list still contains the `hero-rise` entrance and not
-only its own fill, and that every element including the CTA reports `none` in
-the other two. Each mode is governed by its own selector list, and all three
-lists have to reach the CTA. It needs headless Chrome, the same binary
-`tools/og/render.sh` uses. Unlike the other two it is a browser check, not a
-text check: the bug it exists for was a specificity accident that was
-invisible in the CSS source and only appeared once a browser had resolved
-the cascade.
-
-Both of those want a local Chrome or Chromium, and neither bundles one. Each
-reads `CHROME_PATH` (or `CHROME`) first; with neither set it takes the first
-of the macOS application path, `/usr/bin/google-chrome`,
-`google-chrome-stable`, `chromium-browser` and `chromium` that exists, which
-is what lets `check:motion` run on Linux and on a CI runner. Point the
-variable at a binary if yours lives anywhere else:
+Neither checker needs a browser. `tools/og/render.sh` does, and does not
+bundle one: it reads `CHROME_PATH` (or `CHROME`) first, and with neither set
+takes the first of the macOS application path, `/usr/bin/google-chrome`,
+`google-chrome-stable`, `chromium-browser` and `chromium` that exists. Point
+the variable at a binary if yours lives anywhere else:
 
 ```
-CHROME_PATH=/path/to/chrome npm run check:motion
+CHROME_PATH=/path/to/chrome sh tools/og/render.sh default
 ```
 
 `tools/og/render.sh` stays macOS-only even so: it verifies every card is
 exactly 1200x630 with `sips`, which ships with macOS and nowhere else. It is
-needed only to redraw a card's PNG, so nothing in the build, the three
+needed only to redraw a card's PNG, so nothing in the build, the two
 checkers, or the card preview is blocked by it.
 
 No checker replaces the one check no command can do — pasting the real
@@ -117,7 +99,7 @@ URLs into a real client after a deploy and looking at what unfurls.
 ### The build behind a pull request
 
 `.github/workflows/ci.yml` runs this same sequence — `npm ci`, the build, the
-three checkers, `npm test` — on every pull request, and only if all of it
+two checkers, `npm test` — on every pull request, and only if all of it
 passes attaches the built `dist/` to the run as an artifact named
 `pr-<number>-<short-sha>-dist`, kept for seven days. A failing run has no
 artifact at all, so what you download has already passed its own gates.

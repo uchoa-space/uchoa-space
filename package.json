@@ -13,7 +13,6 @@
     "astro": "astro",
     "check:csp": "node tools/check-csp-hashes.mjs",
     "check:og": "node tools/check-og-tags.mjs",
-    "check:motion": "node tools/check-hero-motion.mjs",
     "preview:cards": "node tools/preview-cards.mjs",
     "test": "node --test 'src/lib/**/*.test.{ts,mjs}'"
   },

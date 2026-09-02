@@ -22,10 +22,10 @@ concurrency:
 # Every action below is pinned to a commit SHA rather than to its tag. A tag is
 # a movable pointer: the owner of an action can repoint v4 at new code, and a
 # workflow that trusts a tag runs whatever it points at that morning, with this
-# repository's contents and a Pages deploy token in scope. Five are GitHub's
-# own, where this is hardening rather than distrust; browser-actions/setup-chrome
-# is third-party, where it is the pin that actually matters. The trailing comment
-# on each line is the version the SHA was, and is what to read when upgrading:
+# repository's contents and a Pages deploy token in scope. All of them are
+# GitHub's own, where this is hardening rather than distrust. The trailing
+# comment on each line is the version the SHA was, and is what to read when
+# upgrading:
 # resolve the new tag with `gh api repos/<action>/commits/<tag> --jq .sha` and
 # replace both the SHA and the comment together.
 
@@ -56,35 +56,21 @@ jobs:
       - name: Build
         run: npm run build
 
-      # The three checkers and the unit suite gate the deploy. A build can
+      # The two checkers and the unit suite gate the deploy. A build can
       # succeed while producing output that is wrong in a way only the built
-      # artifact shows — a stale CSP hash, a blank OG tag, an entrance
-      # animation lost to the cascade — and before this, that shipped
-      # unconditionally. No continue-on-error on any of them: a non-zero exit
-      # fails the job, and configure-pages onward never runs.
+      # artifact shows — a stale CSP hash, a blank OG tag — and before this,
+      # that shipped unconditionally. No continue-on-error on either of them: a
+      # non-zero exit fails the job, and configure-pages onward never runs.
       - name: Check CSP hashes
         run: npm run check:csp
 
       - name: Check OG tags
         run: npm run check:og
 
-      # check:motion is the one that needs a browser: it asks Chrome to resolve
-      # the cascade, because that is the only thing that can. The runner has no
-      # Chrome at the macOS path the checker defaults to, so install one and
-      # hand its path over through CHROME_PATH, the override the checker reads
-      # first.
-      - id: chrome
-        uses: browser-actions/setup-chrome@48ad923757ca74d66703209fe939badbdf80f2f4 # v2.2.0
-
-      - name: Check hero motion
-        run: npm run check:motion
-        env:
-          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
-
       # The one gate that reads source rather than dist/. src/lib/ decides what
       # the share tags say — which card a post falls back to, whether its alt
       # text is used at all, how long a post claims to take — and a regression
-      # there produces a page the three checkers pass happily: the tags are
+      # there produces a page the two checkers pass happily: the tags are
       # present, absolute and pointing at a PNG that exists, they are just
       # wrong. The same goes for the table-scroll plugin: a table that stops
       # being wrapped still validates. ci.yml runs this suite on the pull

@@ -5,11 +5,9 @@
 // always did. A tool that reports on the build should not disagree with the
 // tool that renders it, so the pair lives here once.
 //
-// Deliberately not shared with `check-csp-hashes.mjs` or
-// `check-hero-motion.mjs`: one hashes raw inline blocks and the other drives
-// headless Chrome to read computed styles off a live DOM. Neither parses
-// static tags, so folding them in would buy a shared import and no shared
-// meaning.
+// Deliberately not shared with `check-csp-hashes.mjs`: that one hashes raw
+// inline blocks rather than parsing static tags, so folding it in would buy a
+// shared import and no shared meaning.
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
