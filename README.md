@@ -114,6 +114,26 @@ checkers, or the card preview is blocked by it.
 No checker replaces the one check no command can do — pasting the real
 URLs into a real client after a deploy and looking at what unfurls.
 
+### The build behind a pull request
+
+`.github/workflows/ci.yml` runs this same sequence — `npm ci`, the build, the
+three checkers, `npm test` — on every pull request, and only if all of it
+passes attaches the built `dist/` to the run as an artifact named
+`pr-<number>-<short-sha>-dist`, kept for seven days. A failing run has no
+artifact at all, so what you download has already passed its own gates.
+
+Take it from the run's summary page, or from a terminal:
+
+```
+gh run download --repo uchoa-space/uchoa-space -n pr-12-a1b2c3d-dist -D review
+python3 -m http.server --directory review
+```
+
+Serve it; do not open the files. The pages reference `/assets/...` from the
+root, so `file://` gets an unstyled page and a wall of 404s. Any plain static
+server is enough — the CSP arrives in a meta tag, not a response header, so
+there is nothing to configure to see what a reader would see.
+
 ### Looking at the cards
 
 ```
