@@ -18,10 +18,9 @@ const hasPosts = (await getCollection('posts')).length > 0;
 // site is audited against.
 const csp = [
   "default-src 'none'",
-  // Two inline scripts, each pinned by hash: the hero-seen check in the head
-  // and the year in the footer.
-  "script-src 'self' 'sha256-8q7odu0pAI06OJ43B0BzOdsitJ8D2tXb8RjYwR3oDCk=' 'sha256-WeE/AL/NMnjV1YDqJ5wFGyJlLBoKJU2aMtor4SYQZn4='",
-  `style-src 'self' 'sha256-Ze6o7k+Qon/F2pVdlU6zaaiO7TpNdwmgYAMtI+4q7nc='${import.meta.env.DEV ? " 'unsafe-inline'" : ''}`,
+  // One inline script, pinned by hash: the year in the footer.
+  "script-src 'self' 'sha256-WeE/AL/NMnjV1YDqJ5wFGyJlLBoKJU2aMtor4SYQZn4='",
+  `style-src 'self' 'sha256-Mu0afRcjm7yOby8nzoBBj9eJHHEopYAqzlkxmY7baxg='${import.meta.env.DEV ? " 'unsafe-inline'" : ''}`,
   "img-src 'self' data: https://uchoa-space.goatcounter.com",
   `connect-src https://uchoa-space.goatcounter.com${import.meta.env.DEV ? ' ws://localhost:* http://localhost:*' : ''}`,
   "base-uri 'none'",
@@ -96,26 +95,6 @@ const csp = [
      page's own stylesheet. A same-origin file is already allowed by
      style-src 'self', and unlike a bundled stylesheet it is a plain file in
      dev too, so nothing inline is ever injected here. -->
-<!-- The hero's entrance is a guided first read, so it should happen once. On
-     the way back from a post it would be four seconds of delay in front of
-     something already read.
-
-     This has to run before the body is painted, or the animation starts and
-     then gets cancelled mid-way, which is worse than either outcome — hence
-     an inline script here in the head rather than a module at the end. It
-     carries is:inline for the same reason the blocks below do: Astro must
-     leave the bytes alone, because script-src pins them by hash.
-
-     sessionStorage, not localStorage: the guided read is an introduction, so
-     it is worth repeating on a genuinely new visit, just not on every step of
-     this one. If storage throws — private modes do — the animation simply
-     plays, which is the harmless branch. -->
-<script is:inline>
-  try {
-    if (sessionStorage.getItem('hero-seen')) document.documentElement.dataset.heroSeen = '';
-    else sessionStorage.setItem('hero-seen', '1');
-  } catch (e) {}
-</script>
 <!-- Type scale: sizes, weights, line-heights and letter-spacing shared with
      posts.css and article.css, so the hero, the post list and the article
      shell read from one ramp instead of each inventing its own numbers. -->
@@ -328,36 +307,14 @@ const csp = [
      Only one of these can exist at a time. A second filled button would put
      two things first, which is the same as putting nothing first.
 
-     It arrives outlined, like its two neighbours, and fills in only once the
-     reader has been through everything and has nowhere left to go. That is
-     the argument for the timing: the sweep is the page answering "so what do
-     I do now", and it cannot answer before the question exists.
-
      These rules must stay after the `.links a` block above: same specificity,
      so source order is what decides. The icon needs no rule of its own, it is
      stroked with currentColor.
 
-     The fill is painted as a gradient rather than a background-color so it
-     can be swept: background-size goes from 0% to 100% width, growing from
-     the left edge. On the element itself, with no pseudo-element and no
-     clip-path — the two constructs that failed on the marker and were never
-     explained. This is the same technique the marker's own stroke uses, which
-     does work here.
-
-     Resting state is the finished, filled button. The unfilled look lives
-     only in the keyframe's `from`, held through the delay by `backwards`, so
-     a CTA that never animates is simply a filled CTA.
-
-     The entrance and the fill are one comma-separated `animation` list, and
-     they have to stay that way. `animation` is a shorthand: a second
-     declaration on this element replaces the list, it does not add to it.
-     This selector is (0,2,0) and the entrance rule `.links > *` is (0,1,0),
-     so this one wins the cascade whatever the source order — which is how
-     the button once ended up with the fill and no entrance, fully present
-     in the first painted frame while its two neighbours rose in. The two
-     animations touch disjoint properties (hero-rise does opacity and
-     transform, cta-fill does background-size and color), so composing them
-     costs nothing. Adding a third here means extending this list. */
+     The fill is painted as a gradient rather than a background-color, and
+     the hover rule below swaps that gradient for the brighter gold. Keeping
+     it a background-image is what makes the swap instant: `.links a`
+     transitions background-color, which this element never sets. */
 
   .links .cta {
     background-color: transparent;
@@ -366,9 +323,6 @@ const csp = [
     background-size: 100% 100%;
     border-color: var(--gold);
     color: var(--text-on-gold);
-    animation:
-      hero-rise 600ms var(--read-actions) ease-out backwards,
-      cta-fill 700ms var(--read-cta) ease-out backwards;
   }
 
   /* Sets background-image, not the `background` shorthand: the shorthand
@@ -376,13 +330,6 @@ const csp = [
   .links .cta:hover {
     background-image: linear-gradient(var(--gold-bright), var(--gold-bright));
     border-color: var(--gold-bright);
-  }
-
-  @keyframes cta-fill {
-    from {
-      background-size: 0% 100%;
-      color: var(--gold);
-    }
   }
 
   /* Groups the wordmark + nav as the page's <main> landmark, and owns the
@@ -400,93 +347,6 @@ const csp = [
     justify-content: safe center;
     min-height: 100dvh;
     gap: 44px;
-  }
-
-  /* --- entrance ---
-     Each element animates *from* a state, never *to* one: with
-     animation-fill-mode: backwards the element holds the `from` frame during
-     its delay and then falls back to its own resting style, which is the
-     visible one. Spelling it the other way round — opacity: 0 in the resting
-     rule plus `forwards` — means anything that stops the animation from
-     running leaves the hero blank, which is a bad trade for a decoration.
-
-     This is paced as assisted reading, not as decoration. Each step appears
-     only once there has been time to take in the one before it, so the order
-     below is the order a reader is being walked through: the name, then the
-     one sentence that says what I do, then the bio — which is a paragraph
-     rather than a line, and where the marker carries the part that matters —
-     and last the buttons.
-
-     The variables are named for the step, not for a beat number, because the
-     number that matters is "when does the reader get here". Each is absolute
-     rather than relative to the previous one: reading time does not compose,
-     and a chain of offsets hides how long the whole thing actually takes.
-
-     The three buttons share one delay on purpose. They are alternatives, not
-     a sequence — staggering them implied a priority between LinkedIn, GitHub
-     and the blog that does not exist.
-
-     (The marker's own sweep would belong just after --read-bio. It is static
-     for now: animating it failed twice and the cause was never found.) */
-
-  /* The whole scale was multiplied by 5/12 once the bio was measured to be
-     the page's Largest Contentful Paint element (record:
-     .preview/lcp-measurement.md): `backwards` holds it at opacity: 0 for the
-     whole delay, and a browser does not count an element at opacity: 0 as
-     painted, so --read-bio *is* the LCP time. The fade stays — it is part of
-     the choreography, not decoration — so the delays move instead. 5/12 is
-     the factor that puts --read-bio on 1000ms and happens to leave every
-     other step on a whole millisecond, so the gaps keep their 3 : 5 : 4
-     proportion exactly and the sequence still reads as a sequence. */
-  :root {
-    --read-name: 0ms;
-    --read-line: 375ms;
-    --read-bio: 1000ms;
-    --read-actions: 1500ms;
-    /* The buttons finish arriving at 1500 + 600. This waits past that, long
-       enough for the reader to have run out of page. */
-    --read-cta: 2250ms;
-  }
-
-  @keyframes hero-fade {
-    from { opacity: 0; }
-  }
-
-  @keyframes hero-rise {
-    from { opacity: 0; transform: translateY(10px); }
-  }
-
-  /* Opacity only. This element's resting transform is the matrix that
-     condenses and slants the letters, and a translate in the keyframe would
-     replace it rather than compose with it. */
-  .wordmark {
-    animation: hero-fade 700ms var(--read-name) ease-out backwards;
-  }
-
-  .lede {
-    animation: hero-rise 600ms var(--read-line) ease-out backwards;
-  }
-
-  .intro {
-    animation: hero-rise 600ms var(--read-bio) ease-out backwards;
-  }
-
-  .links > * {
-    animation: hero-rise 600ms var(--read-actions) ease-out backwards;
-  }
-
-  /* Seen already this session (the script in the head sets this): drop the
-     animations and every element falls back to its resting style, which is
-     the finished one. Same escape hatch as prefers-reduced-motion. */
-  [data-hero-seen] .wordmark,
-  [data-hero-seen] .lede,
-  [data-hero-seen] .intro,
-  [data-hero-seen] .links > *,
-  /* Listed on its own because `.links .cta` is (0,2,0): a selector that only
-     matched it via `.links > *` would have to out-specify it to switch its
-     animations off, and specificity is exactly what broke this rule once. */
-  [data-hero-seen] .links .cta {
-    animation: none;
   }
 
   :focus-visible {
@@ -526,14 +386,6 @@ const csp = [
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     .links a, .links button { transition: none; }
-    /* Removing the animation leaves each element on its resting style, which
-       is the finished one — the hero is simply already there.
-
-       `.links .cta` is named explicitly for the same reason it is named in
-       the [data-hero-seen] list above: it is (0,2,0) and `.links > *` is
-       (0,1,0), so without it the button kept animating for a reader who had
-       asked the operating system to stop motion. */
-    .wordmark, .lede, .intro, .links > *, .links .cta { animation: none; }
   }
 </style>
 </head>
