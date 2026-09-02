@@ -239,7 +239,7 @@
 .prose mark {
   background-color: transparent;
   color: inherit;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 14' preserveAspectRatio='none'%3E%3Cpath d='M3 8.5 C 62 3.5, 118 10.5, 178 5.5 S 258 3.5, 297 7' fill='none' stroke='%23f5c451' stroke-width='3' stroke-linecap='round' opacity='0.85'/%3E%3Cpath d='M9 11.5 C 74 7.5, 140 12.5, 202 8.5 S 268 8, 291 11' fill='none' stroke='%23f5c451' stroke-width='2' stroke-linecap='round' opacity='0.45'/%3E%3C/svg%3E");
+  background-image: var(--mark-underline);
   background-repeat: no-repeat;
   background-size: 100% 0.5em;
   background-position: 0 100%;

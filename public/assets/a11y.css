@@ -1,0 +1,47 @@
+/* -------------------------------------------------------------------------
+   Keyboard affordances shared by the landing and the article pages.
+
+   Its own file for the reason sky.css is: both page types need the same
+   rules, and the landing's alternative home for them is the inline <style>
+   block whose bytes its CSP pins by hash. A same-origin file is already
+   covered by `style-src 'self'` on both pages, so the copy is removed rather
+   than made twice and the hashed block does not grow.
+
+   The colours are literals rather than variables because the two pages name
+   the same palette differently — `--gold` / `--text-on-gold` in the landing's
+   inline block, `--prose-link` in article.css — and neither name reaches both
+   documents. The type tokens below do: type.css is loaded by both.
+   ------------------------------------------------------------------------- */
+
+/* Skip to content (WCAG 2.4.1). Fixed, so it is out of flow: the landing's
+   body is a flex column with a 44px gap, and an in-flow child would open that
+   gap at the top of every page whether or not the link is showing.
+
+   Moved out of the viewport by a transform rather than by `display: none` or
+   `visibility: hidden`, which would take it out of the focus order and leave
+   nothing to tab to. There is no transition on the transform, so the link
+   simply appears — nothing here for prefers-reduced-motion to switch off.
+
+   `:focus`, not `:focus-visible`: a link is only focusable by keyboard or by
+   a script that sent focus there deliberately, and in both cases it has to be
+   on screen. The focus ring itself comes from each page's own
+   `:focus-visible` rule. */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  transform: translateY(-300%);
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: #f5c451;
+  color: #17130a;
+  font-size: var(--fs-small);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-interactive);
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}

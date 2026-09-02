@@ -21,7 +21,7 @@ const csp = [
   // Two inline scripts, each pinned by hash: the hero-seen check in the head
   // and the year in the footer.
   "script-src 'self' 'sha256-8q7odu0pAI06OJ43B0BzOdsitJ8D2tXb8RjYwR3oDCk=' 'sha256-WeE/AL/NMnjV1YDqJ5wFGyJlLBoKJU2aMtor4SYQZn4='",
-  `style-src 'self' 'sha256-jGYWL2YiHuz61wfZzkGznKypTvXGwqjKC5dylIIb4kc='${import.meta.env.DEV ? " 'unsafe-inline'" : ''}`,
+  `style-src 'self' 'sha256-6NsMAlasR0R65x1Ml+Vxr5ef4ZFexLbvx2KAEUQ1zOo='${import.meta.env.DEV ? " 'unsafe-inline'" : ''}`,
   "img-src 'self' data: https://uchoa-space.goatcounter.com",
   `connect-src https://uchoa-space.goatcounter.com${import.meta.env.DEV ? ' ws://localhost:* http://localhost:*' : ''}`,
   "base-uri 'none'",
@@ -121,6 +121,7 @@ const csp = [
      shell read from one ramp instead of each inventing its own numbers. -->
 <link rel="stylesheet" href="assets/type.css" />
 <link rel="stylesheet" href="assets/sky.css" />
+<link rel="stylesheet" href="assets/a11y.css" />
 <link rel="stylesheet" href="assets/posts.css" />
 <!-- is:inline on this block and on the two script tags below is load-bearing,
      not a style choice. Without it Astro scopes and bundles the CSS into an
@@ -246,7 +247,9 @@ const csp = [
      rather than an adjective. Two passes at different opacities, the way a
      real marker doubles back, drawn as an SVG data URI: `img-src 'self'
      data:` already covers it (same mechanism as the favicon above), so this
-     needs no file and no CSP change.
+     needs no file and no CSP change. The URI itself is `--mark-underline` in
+     assets/type.css, because the article's `.prose mark` wants the identical
+     stroke and one of the two copies would sit inside this hashed block.
 
      preserveAspectRatio="none" lets it stretch to whatever width the phrase
      ends up being; only its length distorts, the thickness is vertical and
@@ -261,7 +264,7 @@ const csp = [
   .mark {
     background-color: transparent;
     color: inherit;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 14' preserveAspectRatio='none'%3E%3Cpath d='M3 8.5 C 62 3.5, 118 10.5, 178 5.5 S 258 3.5, 297 7' fill='none' stroke='%23f5c451' stroke-width='3' stroke-linecap='round' opacity='0.85'/%3E%3Cpath d='M9 11.5 C 74 7.5, 140 12.5, 202 8.5 S 268 8, 291 11' fill='none' stroke='%23f5c451' stroke-width='2' stroke-linecap='round' opacity='0.45'/%3E%3C/svg%3E");
+    background-image: var(--mark-underline);
     background-repeat: no-repeat;
     background-size: 100% 0.5em;
     background-position: 0 100%;
@@ -527,9 +530,15 @@ const csp = [
 </head>
 <body>
 
+<!-- First focusable element on the page, ahead of the profile links. Its
+     styles are in assets/a11y.css rather than the hashed block below, for the
+     same reason the starfield's are in sky.css: the article pages need the
+     identical rules, and a same-origin file is one copy instead of two. -->
+<a class="skip-link" href="#content">Skip to content</a>
+
 <Starfield />
 
-<main>
+<main id="content" tabindex="-1">
   <h1 class="wordmark"><span>Rafael</span> <span>Uchoa</span></h1>
 
   <div class="statement">

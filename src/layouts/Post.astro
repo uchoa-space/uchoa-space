@@ -57,6 +57,7 @@ const readableDate = date.toLocaleDateString('en-US', {
          at the top of type.css. -->
     <link rel="stylesheet" href="/assets/type.css" />
     <link rel="stylesheet" href="/assets/sky.css" />
+    <link rel="stylesheet" href="/assets/a11y.css" />
     <link rel="stylesheet" href="/assets/article.css" />
     <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
     {/* Below the canonical, and safe here for the same reason it is not yet on
@@ -73,9 +74,13 @@ const readableDate = date.toLocaleDateString('en-US', {
     />
   </head>
   <body class="article-page">
+    <!-- First focusable element on the page, ahead of the breadcrumb. Styles
+         are in assets/a11y.css, shared with the landing. -->
+    <a class="skip-link" href="#content">Skip to content</a>
+
     <Starfield />
 
-    <main class="article">
+    <main id="content" tabindex="-1" class="article">
       <nav class="article-nav" aria-label="Breadcrumb">
         <a href="/"><span aria-hidden="true">&#8592;</span> Rafael Uchoa</a>
       </nav>
