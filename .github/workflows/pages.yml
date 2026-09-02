@@ -19,6 +19,15 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+# Every action below is pinned to a commit SHA rather than to its tag. A tag is
+# a movable pointer: the owner of an action can repoint v4 at new code, and a
+# workflow that trusts a tag runs whatever it points at that morning, with this
+# repository's contents and a Pages deploy token in scope. All five here are
+# GitHub's own, so this is hardening rather than distrust. The trailing comment
+# on each line is the version the SHA was, and is what to read when upgrading:
+# resolve the new tag with `gh api repos/<action>/commits/<tag> --jq .sha` and
+# replace both the SHA and the comment together.
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -26,11 +35,11 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       # Pinned to the major version the site is developed against locally.
       # Astro 7 requires >=22.12.0; a drift here is a drift in the output.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '26'
           cache: npm
@@ -41,11 +50,11 @@ jobs:
       - name: Build
         run: npm run build
 
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
           path: dist
 
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
