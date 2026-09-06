@@ -1,0 +1,82 @@
+---
+title: "The gate on the bus: one wave, three boundaries, one command"
+date: 2026-09-06
+description: "I claimed an agent runtime with supervisor-owned gates. Here is the one wave that exists as evidence: a public bus directory, a merge sha, three counters, and the supervisor's acceptance written as a single line."
+imageAlt: "Share card on a near-black starfield: the title 'The gate on the bus' above a panel headed 'Thread 1, seq 21, tag verdict', reading 'accept wave 1 at 61c7e94' in gold over three grey lines: hit_rate 16/18, escapes 2, override_rate 0/0."
+---
+
+I claimed an agent runtime with supervisor-owned gates. A claim like that is cheap; what makes it checkable is a repository where the gates are files, the authors are dated, and the supervisor's decision is a line you can `git blame`. This post is that repository, read once. One wave on one project: it proves the mechanism ran, and nothing about whether it pays.
+
+**TL;DR**
+
+- The bus is a directory, [`bus/v1/`](https://github.com/uchoa-space/rita/tree/dba5c749defe4bc13fd0f4e65c45bc272b098b7f/bus/v1), committed with the code. Six authors, sixty-six entries on the three threads that matter, each with a timestamp and a sequence number.
+- The supervisor, signed `admiral`, wrote twenty-one entries. All are comments. Three boundaries: the intent, eighteen record picks, one verdict.
+- The wave merged at [`61c7e94`](https://github.com/uchoa-space/rita/commit/61c7e94bf2f1e45840131ade7be38314be21d930) after a review by a second author who re-ran the gate script and posted the output.
+- The gate is a brief and one command. The supervisor never opened the code.
+- N=1, no conclusion. Two escapes and one refusal are on the record, and the brief got the refusal count wrong.
+
+## What was asked
+
+Thread 1 opens with an intent posted by `kirk` and answered by `admiral` in one entry: outcome, user, why now, success, constraints. The success line is the thesis, from [`threads/001/admiral.md`](https://github.com/uchoa-space/rita/blob/dba5c749defe4bc13fd0f4e65c45bc272b098b7f/bus/v1/threads/001/admiral.md), seq 4:
+
+> wave 1 closes with the Admiral touching only three boundaries (intent, ADR selection, wave review); every extra entry is counted and becomes an ADR; the three counters (hit rate, escapes, override rate) come out instrumented; nothing is concluded from N=1.
+
+The wave is small on purpose: derive one use-case header, `Chat::Open`, as a Ruby 3.3 stdlib kernel, prove it with a suite and a `bin/ci` script, and render the header back out with `bin/rita explain`.
+
+## What the bus shows
+
+**Boundary one.** `admiral` answered the intent (seq 4) and confirmed the analyst's seven guesses with one word, `yes` (seq 5). Nothing else from that author on the thread until the verdict.
+
+**Boundary two.** On [thread 3](https://github.com/uchoa-space/rita/blob/dba5c749defe4bc13fd0f4e65c45bc272b098b7f/bus/v1/threads/003/admiral.md), `spock` shortlisted the decision records and named eight gaps; `admiral` answered with eighteen one-line entries, sixteen tagged `adr.hit` and two `adr.miss`. Those tags are the hit rate's numerator and denominator; nobody typed the fraction.
+
+**The build.** On thread 4, `scotty` derived the header, then wrote the two things that were not derived as [escapes](https://github.com/uchoa-space/rita/blob/dba5c749defe4bc13fd0f4e65c45bc272b098b7f/bus/v1/threads/004/scotty.md), seq 5 and 6, each with a `because`: a hand-written status predicate, and a hand-kept port method list. The evidence entry names the sha, `ba79776`, and the run: 19 runs, 81 assertions, 0 failures.
+
+**The review.** `bones` re-ran `bin/ci` at [`ba79776`](https://github.com/uchoa-space/rita/commit/ba79776a18fbf25ed1c43b8f26110edd116ec202) in a detached worktree, read the whole diff, and [approved](https://github.com/uchoa-space/rita/blob/dba5c749defe4bc13fd0f4e65c45bc272b098b7f/bus/v1/threads/004/bones.md) with four non-blocking findings, carried to the next wave rather than fixed. `kirk` merged. The wave diff is [`86c071c...61c7e94`](https://github.com/uchoa-space/rita/compare/86c071cd938192798388476d513bda78360f1b63...61c7e94bf2f1e45840131ade7be38314be21d930): 21 files, 656 lines, of which 175 are kernel code.
+
+**Boundary three.** `uhura` wrote the [gate brief](https://github.com/uchoa-space/rita/blob/dba5c749defe4bc13fd0f4e65c45bc272b098b7f/bus/v1/threads/001/uhura.md) at seq 19: mission, wave goal, what was proven, what was argued not measured, escapes and refusals, a recommendation, and the exact command. The supervisor's entire third boundary is seq 21, tag `verdict`:
+
+```
+accept wave 1 at 61c7e94bf2f1e45840131ade7be38314be21d930
+```
+
+<mark>The reviewer had opened the code; the supervisor had not.</mark> That is the design; the bus is what lets you check it held.
+
+## The header, rendered
+
+`bin/rita explain` at the merge sha prints the header the wave was about. This is copied from the [wave record](https://github.com/uchoa-space/rita/blob/dba5c749defe4bc13fd0f4e65c45bc272b098b7f/docs/decisions/003-wave-1-chat-open.md), not retyped:
+
+```
+Chat::Open  command
+  intent       Open a thread for the reader to talk in
+  leaves       thread: open
+  invalidates  thread
+  effects      thread -> open; stale: thread
+
+stages: call -> leaves -> invalidates
+words: intent 1, accepts 0, requires 0, leaves 1, returns 0, invalidates 1, once 0, renders 0
+```
+
+One command, no inputs, one postcondition the kernel verifies after the call rather than performs: the smallest header that exercises the rule.
+
+## The counters
+
+From the same record, `bus metrics` at merge, verbatim, under the line the record carries:
+
+N=1, no conclusion.
+
+```
+hit_rate: 16/18 = 0.89
+escapes: 2 (2/1 = 2.00 over derived)
+override_rate: 0/0 = —
+events: 125
+```
+
+<Callout>
+The escapes ratio has a denominator of one, because the wave had one derived entry. A ratio of 2.00 is the definition not meaning anything yet, not a finding. The override rate has no denominator at all: the supervisor was never refused, so there was nothing to override.
+</Callout>
+
+## What went wrong, on the record
+
+The gate brief says "Refusals: none on threads 1 or 4." The event log disagrees: one guard refusal, when a review dispatch was killed from outside before the reviewer wrote anything ([thread 4](https://github.com/uchoa-space/rita/blob/dba5c749defe4bc13fd0f4e65c45bc272b098b7f/bus/v1/threads/004/kirk.md), seq 11, exit 1), plus three refused runs from mistyped arguments. The [acceptance record](https://github.com/uchoa-space/rita/blob/dba5c749defe4bc13fd0f4e65c45bc272b098b7f/docs/decisions/004-wave-1-accepted-by-the-admiral.md) names the error and its cause: the brief reported a counter the metrics query does not carry, read from the threads by eye. The same record corrects `kirk`, who cited the verdict at seq 20; seq 20 is a dispatch. The bus wins over the comment.
+
+That is the whole exhibit: a public directory, six authors, three boundaries, one line. Whether the mechanism is worth its cost is a question for N≥2; the counters exist so it can be asked.
