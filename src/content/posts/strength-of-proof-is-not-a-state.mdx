@@ -1,0 +1,165 @@
+---
+title: "Strength of proof is not a state"
+date: 2026-09-11
+description: "I keep use cases as flat files: states, transitions, invariants, one file each. To find out whether the grammar travels, I ported one to electronic signature — envelopes, signers, webhook deliveries. The port broke a rule I had been leaning on."
+imageAlt: "Share card on a near-black starfield: the title 'Strength of proof is not a state' above a panel headed 'The rule the port broke', reading 'In the source grammar, strength of proof was the state: verified, cross_validated' in grey over a gold line, 'A party has to act after being proved, so strength became an attribute.'"
+---
+
+I keep my use cases as files. Not classes, not service objects — one flat file per use case, declaring what it accepts, which state it requires, which state it leaves, and what it invalidates. [`rita`](https://github.com/uchoa-space/rita) renders these headers back out with `bin/rita explain`; the vocabulary below is the same one.
+
+A grammar that only describes the domain it was written against is not a grammar, it is a schema with opinions. So I took one I had written for a document-heavy domain and ported it to a different one — electronic signature — to see what survived. Most of it did. One thing did not, and that one is the post.
+
+**TL;DR**
+
+- The whole language is two vocabulary files: a state list per entity, and about ten verbs with a one-line definition each. A use case is `intent`, `accepts`, `requires`, `leaves`, `returns`, `invalidates`, `once`.
+- The port went from 36 use cases to 21, and 5 entities to 3. That was not tightening prose. One entire entity had nowhere to land.
+- The source domain has a human-judgement queue. Electronic signature has none — a requirement is met or it is not — and seven files left with it.
+- The proof ladder survived intact: proof that stands on its own, versus convergent evidence. Two rungs, not a confidence score.
+- <mark>What broke: in the source, strength of proof **is** the state.</mark> That cannot hold where a party has to act *after* being proved. Strength became an attribute.
+- The verb count went *up*, 10 to 11, while the use-case count fell 42%.
+- Not a repository and not running. A sketch on disk, argued and not measured.
+
+## The grammar
+
+Two files carry the vocabulary. The entities are nothing but names and states:
+
+```ruby
+entity :envelope do
+  states :drafted, :running, :closed, :cancelled
+end
+
+entity :signer do
+  states :invited, :authenticated, :signed, :refused
+end
+
+entity :delivery do
+  states :pending, :delivered, :failed, :cancelled
+end
+```
+
+The verbs carry a definition, because the definition is what stops a verb drifting:
+
+```ruby
+verb :verify,         "confirms it against proof that stands on its own"
+verb :cross_validate, "confirms it against convergent evidence, when no single source proves it"
+verb :close,          "seals the artifact and its audit trail; nothing further changes"
+verb :retry,          "attempts a failed hand-off again, without producing a second effect"
+```
+
+Every use case is then `<verb>_<entity>`, one file, no framework:
+
+```ruby
+command
+
+intent   "Seals the envelope and its signature log once every signer has acted; nothing about it changes again"
+accepts  envelope: :ref
+requires envelope: :running
+leaves   envelope: :closed
+returns  :envelope, :audit_log
+invalidates :envelope
+once     :envelope
+```
+
+`once` is the uniqueness key, which is also the idempotency key. `invalidates` is what goes stale. Neither is a comment — they are the parts a reviewer argues with.
+
+## The port, and the entity that had nowhere to go
+
+The source grammar had five entities. Two of them merged on contact: what it called a *contract* and what it called the main aggregate turned out to be the same thing seen twice, which I had not noticed until the second domain put them side by side. A third, the document, lost its state machine entirely — here the lifecycle belongs to the envelope and the document is just content.
+
+The interesting one is the fourth. The source has an exception queue: open an exception, assign an owner and a due date, and settle it with a named person's signature on a responsibility term. Seven of its thirty-six files exist to run that queue.
+
+It has no counterpart here, and not because I trimmed it.
+
+<Callout>
+The source domain has genuine judgement calls — questions where a competent person can reasonably answer either way, and someone has to put their name on the answer. Electronic signature has none of that shape. An authentication requirement was satisfied or it was not. There is no rung where a human accepts a signature without proof, because the proof **is** the product.
+</Callout>
+
+That single observation is where most of the simplification came from. It is worth saying plainly, because "I simplified it" usually means someone deleted things they did not understand. Here the domain removed them.
+
+## The ladder survives
+
+The one piece I most wanted to keep is the split between two ways of believing something:
+
+| Rung | Here |
+| --- | --- |
+| Proof that stands on its own | A qualified certificate, an official identity provider, a bank |
+| Convergent evidence | Selfie against document, a one-time token, the delivery channel, the network origin |
+
+Two commands, not one command with a `confidence: 0.87`:
+
+```ruby
+# verify_signer
+accepts  signer: :ref, source: %w[icp_brasil gov_br bank_account certificate], reference: :text, checked_at: :datetime
+requires signer: :invited
+leaves   signer: :authenticated
+```
+
+```ruby
+# cross_validate_signer
+accepts  signer: :ref, basis: %w[selfie_document sms_token email_token whatsapp_token geolocation], reference: :text, checked_at: :datetime
+requires signer: :invited
+leaves   signer: :authenticated
+```
+
+A score would have collapsed these into one number, and the number would have been the thing everyone argued about in review while nobody argued about the rungs. The rungs are the decision. The score is a summary of it, and summaries belong in reports, not in state.
+
+## What broke
+
+In the source grammar, strength of proof is not recorded anywhere — it **is** the state. A document sits in `verified` or in `cross_validated`, and you can tell how strongly it is believed by looking at where it is. That is a genuinely nice property. It means no field can disagree with the state machine, because there is no field.
+
+It does not survive this domain, and the reason is one line. Here a party has to *act* after being proved: authenticate, then sign. So the signing use case would have to say
+
+```ruby
+requires signer: :verified or :cross_validated   # not a thing
+```
+
+— two states of one entity in a single `requires`, which the grammar cannot express. I already knew it could not: the source's own release command carries a note admitting it, and pushes the real condition out into a separate check. I had read that note a dozen times as a small wart. In the new domain it stopped being small.
+
+So assurance became an attribute. Both commands leave `:authenticated`, one recording `:proof` and the other `:convergent`, and a read compares what was obtained against what the envelope demanded. The note is now in the file, where the next person will hit it:
+
+```ruby
+assumed "assurance is an attribute of the signer, not a state: verify_signer records :proof,
+         cross_validate_signer records :convergent, and both leave :authenticated. Stated as
+         states, sign_envelope would have to require two states of one entity",
+        confidence: :high
+```
+
+That `assumed` block is part of the grammar too — an assumption with a confidence on it, sitting in the file rather than in someone's memory. Nine of the twenty-one files carry one. Seven are `:high`, two `:medium`.
+
+The honest summary is that the port found a hole in my own DSL, which is the only reason it was worth doing. A port that goes smoothly has told you nothing.
+
+## The other half: the hand-off
+
+An envelope changing state owes a webhook to whoever subscribed. That is not the product's domain, it is the integration team's, and it gets its own entity:
+
+```ruby
+command
+
+intent   "Records that an envelope event owes a hand-off to a subscribed endpoint"
+accepts  envelope: :ref, event: %w[envelope.sent signer.signed signer.refused envelope.closed envelope.cancelled], subscriber: :ref, payload_version: %w[v1 v2]
+leaves   delivery: :pending
+returns  :delivery
+once     :envelope, :event, :subscriber
+```
+
+Two things in there are the whole argument.
+
+`once :envelope, :event, :subscriber` is the idempotency key, declared in the use case signature rather than buried in a job class. The delivery of a given event to a given subscriber exists at most once, and that is checkable by reading one line. The retry use case then says out loud what the contract is:
+
+> the subscriber is responsible for its own idempotency, and the delivery carries the key it needs. At-least-once is the contract, exactly-once is not offered.
+
+`payload_version` travels with the delivery rather than with the subscriber, which is the less obvious call. Hung off the subscriber, a version migration is a flag flip per endpoint and every consumer moves at once. Hung off the delivery, one endpoint can move event by event. I picked the second because the first is the version of this decision that produces a bad weekend. That is an argument, not a measurement, and it is the line I would expect a reviewer to push back on first.
+
+Creation got the same treatment from the other side. `open_envelope` takes an `external_id` from whatever system is calling — a CRM, an ERP, a connector platform — and keys on it, so a caller that retries gets the same envelope back instead of a second one. Idempotency at the edge is cheaper than deduplication in the middle, and it costs one word in the signature.
+
+## What this doesn't show
+
+Nothing here ran. There is no repository to link, no test suite, no production traffic — it is twenty-one files on my disk and an afternoon of argument. Every claim above is about the shape of a design, and design claims are the cheap kind.
+
+What I would want checked, if someone were checking:
+
+- The assurance-as-attribute call is a **reversal** of something the source grammar got right, traded away to fit a domain constraint. If the constraint is wrong, the trade is wrong.
+- `refuse_signer` requires `:authenticated`, on the assumption that a party authenticates to open an envelope and declines after reading it. If declining before authenticating is real, that `requires` is wrong and the audit log has to carry an unauthenticated refusal. It is marked `confidence: :medium` in the file for exactly that reason.
+- Three entities may be one too few. I am fairly sure the document should not have a lifecycle here. I am not sure at all that it should not have an identity.
+
+The part I would defend is the method rather than the result. Porting a domain model to a neighbouring domain, on purpose, in an afternoon, is an unusually cheap way to find out which of your abstractions were load-bearing and which were just familiar. Mine cost me one rule I liked. That seems like a fair price.
