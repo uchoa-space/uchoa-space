@@ -81,8 +81,13 @@ const readableDate = date.toLocaleDateString('en-US', {
     <Starfield />
 
     <main id="content" tabindex="-1" class="article">
+      {/* /#writing, not /: a reader who followed a link into an article and
+           presses back-to-site wants the list they would have come from, and
+           the landing's hero is a full-viewport screen they would have to
+           scroll past to reach it. #writing is PostList's own section id, the
+           same anchor the landing's "Read blog" button uses. */}
       <nav class="article-nav" aria-label="Breadcrumb">
-        <a href="/"><span aria-hidden="true">&#8592;</span> Rafael Uchoa</a>
+        <a href="/#writing"><span aria-hidden="true">&#8592;</span> Rafael Uchoa</a>
       </nav>
 
       <header class="article-header">
