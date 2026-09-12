@@ -1,0 +1,85 @@
+---
+title: "Every migration in my notes is a rewrite"
+date: 2026-09-11
+description: "Four migration-shaped decisions across 573 of my own ADRs, and every one is a rewrite. Three never finished. The decade I spent upgrading Rails in place under live traffic is nowhere in that record, and the difference between the two is not taste."
+imageAlt: "Share card on a near-black starfield: the title 'Every migration in my notes is a rewrite' above a panel headed 'Four decisions, one shape', reading 'clockyy, wisetimetracker, kitchen-sink, giro — rewrite, rewrite, rewrite, rewrite.' in grey over a gold line, 'Three of the four were never finished.'"
+---
+
+I went looking through my own decision records for an argument I could reuse. I wanted the one where I'd weighed strangling an old system against replacing it, so I could point at it instead of making the case again from scratch.
+
+It isn't there. What is there is four decisions with the same shape, and the shape is not the one I would have described if you'd asked me over coffee.
+
+**TL;DR**
+
+- 573 decision records across 100 projects. Four are migration-shaped. All four choose **replace**; none chooses strangle.
+- Three of the four <mark>were never finished</mark>, and the records say so in their own status lines, because the status line is written at freeze rather than at decision time.
+- The one decade in my career where I actually migrated a framework under production traffic produced **no ADR at all**. It predates the habit.
+- So the record is not evidence that I prefer rewrites. It is evidence about **which projects get written down**, which is a different and more annoying fact.
+- The variable separating the two groups is not taste, seniority or fashion. It is whether anyone was using the thing.
+
+## The four
+
+Each of these is a dated file with Context, Decision and Consequences. I'm quoting the status lines, which are the part I did not write at the time and cannot retro-fit.
+
+**`clockyy/0001`** — rebuild a time tracker on server-side Rails 8, abandoning the previous generation's bet on Clean Architecture Ruby compiled to WebAssembly and run entirely in the browser. Status: *Accepted (reverses `clocky`'s ADR 0001)*. The prior bet had bought offline-first behaviour and no deploy infrastructure, and cost enough that the project's own notes named Ruby-in-wasm debugging its "biggest DevX liability", with a whole mitigation document about routing bugs back to plain MRI just to escape the opaque stack traces.
+
+**`wisetimetracker/0002`** — v1 quarantined under `old/` and deleted seven days later. Status:
+
+> Accepted (executed in full; the replacement was never finished — at freeze the dashboard renders four summary cards and nothing else, while `README.md` still advertises all five feature groups the rewrite deleted)
+
+Four days and sixteen commits had produced a working dashboard: bar and pie charts, a calendar heatmap with overtime days coloured, a week grid, an adherence view. All of it deleted, because the code was organic and the new design system was not. The README still describes the deleted version. That's the tell.
+
+**`kitchen-sink/0002`** — delete the Rails app rather than refactor it, rebuild it six days later without its component library. Status: *Accepted (executed in full — the deletion and the rebuild both shipped; the rebuilt app reached one working index screen and stopped)*. What went in the bin was twenty-seven files, twenty-five of them Ruby classes: a hand-built component library with kanban, table, modal, toast, form and input packages, plus an attributes package that rendered a value by its Active Record type.
+
+**`giro/0001`** — prior repositories are reference only, never ported. Status: *Accepted (decided, never implemented — both commits are documentation plus `rails new` scaffold output, no application code)*.
+
+Four for four. And three of the four ended with less working software than they started with.
+
+<Callout>
+The point is not that rewriting is wrong. `clockyy/0001` reversed a genuinely bad architectural bet and was right to. The point is that four out of four is not a decision — it is a reflex with four sets of reasons attached to it after the fact.
+</Callout>
+
+## The decade that isn't in there
+
+Before any of that I spent ten years as CTO of a live-video platform: 100k+ users, peak concurrency on live broadcasts, Sidekiq and Redis at north of a million jobs a day. The Ruby estate was one Rails application and five Sinatra applications, talking over internal REST, with two of them sharing a database directly — which is exactly as pleasant as it sounds.
+
+Over that decade the Rails app went from 2 to 5, in place, with no downtime window, while enterprise clients were using it.
+
+There is no ADR for a single one of those upgrades. Not one. The habit of writing decisions down started years after that company exited, so the entire period where I did the harder thing is invisible in the record that's supposed to represent how I work.
+
+That asymmetry is worth sitting with, because it is the actual finding. If you had only the corpus, you would conclude I am someone who deletes working software and does not finish the replacement. If you had only the employment history, you would conclude I am a patient in-place upgrader. Both are drawn from real evidence. Both are wrong on their own.
+
+## The variable
+
+Line the two groups up and the difference is not technical:
+
+| | The four | The decade |
+| --- | --- | --- |
+| Users | none | 100k+, paying |
+| Cost of being wrong | a weekend | a page on the status site |
+| Choice | replace | upgrade in place |
+| Finished? | one of four | yes, repeatedly |
+
+When nobody is using it, a rewrite is the cheapest way to think. You get to hold the whole thing in your head again. You are not paying the tax of understanding what the previous version knew, and — this is the part the records quietly admit — you also do not have to finish, because nothing breaks if you stop.
+
+When someone is using it, that same move costs a migration plan, a rollback, a double-write window, and a conversation with a client about why a feature they had last week is gone. So you do the other thing. You upgrade in place, one version at a time, and you finish, because stopping halfway is the one option that isn't available.
+
+Neither behaviour is a philosophy. Both are rational responses to who is on the other end. <mark>The strangler pattern is not a preference; it is what you do when someone is watching.</mark>
+
+## The accident that made this visible
+
+These four records were not written at the moment of deciding. They were reconstructed afterwards, from commits and project notes, which is a real weakness — a reconstructed rationale is a rationale you already know the ending of, and it flatters. Every one of them is marked `Source: extracted` for that reason, and the corpus ranks that below records harvested from contemporaneous notes.
+
+But the same weakness is why the status lines can say "the replacement was never finished" and "reached one working index screen and stopped". A record written at decision time stops at *Accepted*. It captures an intention and has no way to come back and report. Only a record that knows the ending can contradict the person who wrote it.
+
+So the one thing I'd carry forward is not a new discipline I've adopted — it's an observation about which of these two failure modes I'd rather have. Records written live are better evidence and worse mirrors. I'd like both, which means the outcome line has to be a separate, later edit that the format expects rather than an artefact of having written the whole thing late.
+
+The other thing is smaller and immediate: I've stopped treating "I'd strangle it" as something I know about myself. I have the production version of that skill and almost none of it on paper, so when it comes up I now say which evidence I'm drawing on. "I did this for ten years under load" and "I have a written argument for it" are different claims, and only one of them is checkable by the person listening.
+
+## What this doesn't show
+
+The corpus is not public, so everything above is a claim about files you cannot open. Take the quotes for what they are — my own notes, quoted against myself, which is at least the one direction of bias worth trusting.
+
+The production decade has the opposite problem. It is the stronger evidence and the less verifiable: the company exited in 2019, and a reader has no way to check the uptime number or the upgrade path beyond my word. I'd rather say that plainly than dress a career claim up as a measurement.
+
+And four is a very small number. Four migration-shaped decisions out of 573 records is a thin base for a conclusion about anything, including me. What it is good for is the narrower question I actually started with: *do I have a written argument to reuse here?* The answer was no, and finding that out cost less than pretending otherwise would have.
