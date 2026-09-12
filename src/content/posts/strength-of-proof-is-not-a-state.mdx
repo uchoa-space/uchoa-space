@@ -129,6 +129,46 @@ assumed "assurance is an attribute of the signer, not a state: verify_signer rec
         confidence: :high
 ```
 
+<figure>
+<svg viewBox="0 0 600 344" role="img" aria-labelledby="ladder-title ladder-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="ladder-title">The signer state machine after the port</title>
+  <desc id="ladder-desc">A signer starts invited. Two commands lead out of it: verify_signer, taking proof that stands on its own, and cross_validate_signer, taking convergent evidence. Both arrive at the same state, authenticated, one recording an assurance of proof and the other convergent. From authenticated the signer goes to signed or to refused.</desc>
+
+  <g font-family="Inter, system-ui, sans-serif" text-anchor="middle">
+    <rect x="252" y="20" width="96" height="34" rx="8" fill="none" stroke="var(--prose-td-border)"/>
+    <text x="300" y="42" font-size="13" fill="var(--prose-headings)">invited</text>
+
+    <path d="M300 54 L300 68 L150 68 L150 88" fill="none" stroke="var(--prose-td-border)"/>
+    <path d="M300 54 L300 68 L450 68 L450 88" fill="none" stroke="var(--prose-td-border)"/>
+
+    <text x="150" y="106" font-size="12.5" fill="var(--prose-link)">verify_signer</text>
+    <text x="150" y="124" font-size="11.5" fill="var(--prose-muted)">certificate · provider · bank</text>
+    <text x="150" y="142" font-size="11.5" fill="var(--prose-body)">proof that stands alone</text>
+
+    <text x="450" y="106" font-size="12.5" fill="var(--prose-link)">cross_validate_signer</text>
+    <text x="450" y="124" font-size="11.5" fill="var(--prose-muted)">selfie · token · channel · origin</text>
+    <text x="450" y="142" font-size="11.5" fill="var(--prose-body)">convergent evidence</text>
+
+    <path d="M150 156 L150 186 L300 186 L300 200" fill="none" stroke="var(--prose-td-border)"/>
+    <path d="M450 156 L450 186 L300 186 L300 200" fill="none" stroke="var(--prose-td-border)"/>
+    <path d="M294 194 L300 202 L306 194" fill="none" stroke="var(--prose-link)" stroke-width="1.5"/>
+
+    <rect x="216" y="202" width="168" height="46" rx="8" fill="rgba(245,196,81,0.07)" stroke="var(--prose-link)"/>
+    <text x="300" y="222" font-size="13" fill="var(--prose-headings)">authenticated</text>
+    <text x="300" y="239" font-size="11" fill="var(--prose-link)">assurance: :proof | :convergent</text>
+
+    <path d="M300 248 L300 268 L215 268 L215 288" fill="none" stroke="var(--prose-td-border)"/>
+    <path d="M300 248 L300 268 L385 268 L385 288" fill="none" stroke="var(--prose-td-border)"/>
+
+    <rect x="167" y="290" width="96" height="34" rx="8" fill="none" stroke="var(--prose-td-border)"/>
+    <text x="215" y="312" font-size="13" fill="var(--prose-headings)">signed</text>
+    <rect x="337" y="290" width="96" height="34" rx="8" fill="none" stroke="var(--prose-td-border)"/>
+    <text x="385" y="312" font-size="13" fill="var(--prose-headings)">refused</text>
+  </g>
+</svg>
+<figcaption>Two rungs, one state. In the source grammar the two paths ended in two different states and that <em>was</em> the strength; here they converge, and the strength moves into a field on the signer.</figcaption>
+</figure>
+
 That `assumed` block is part of the grammar too — an assumption with a confidence on it, sitting in the file rather than in someone's memory. Nine of the twenty-one files carry one. Seven are `:high`, two `:medium`.
 
 The honest summary is that the port found a hole in my own DSL, which is the only reason it was worth doing. A port that goes smoothly has told you nothing.

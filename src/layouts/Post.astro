@@ -2,6 +2,7 @@
 import Starfield from '../components/Starfield.astro';
 import ShareMeta from '../components/ShareMeta.astro';
 import { ogImageAlt } from '../lib/og-image';
+import { heroImagePath } from '../lib/hero-image';
 
 interface Props {
   title: string;
@@ -15,6 +16,9 @@ interface Props {
 }
 
 const { title, description, date, readingTime, slug, imageAlt } = Astro.props;
+
+// Null for a post with no artwork, which is the first three.
+const heroSrc = heroImagePath(slug);
 
 // The frontmatter date is a bare YYYY-MM-DD, which parses as UTC midnight;
 // formatting in UTC keeps it from sliding a day west of Greenwich.
@@ -85,7 +89,15 @@ const readableDate = date.toLocaleDateString('en-US', {
         <a href="/"><span aria-hidden="true">&#8592;</span> Rafael Uchoa</a>
       </nav>
 
-      <header class="article-header">
+      {/* alt is empty on purpose, and it is the correct value rather than a
+          shortcut: the band's entire content is the title, which the h1 below
+          repeats as real text. Describing it would make a screen reader read
+          the headline twice. Decorative art, announced by neither. */}
+      {heroSrc && (
+        <img class="article-hero" src={heroSrc} alt="" width="1200" height="360" />
+      )}
+
+      <header class:list={['article-header', heroSrc && 'has-hero']}>
         <h1 class="article-title">{title}</h1>
         <p class="article-meta">
           <time datetime={isoDate}>{readableDate}</time>

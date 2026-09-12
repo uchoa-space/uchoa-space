@@ -497,3 +497,49 @@
     transition: none;
   }
 }
+
+/* --- article hero ---
+   The band above the title, opt-in by file (src/lib/hero-image.ts). It is
+   1200x360 rendered into a 38rem column, so it lands at 2x and stays crisp on
+   a retina display. width/height are on the element as well, so the space is
+   reserved before the PNG arrives and the title does not jump. */
+.article-hero {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 40px 0 0;
+  border-radius: 14px;
+  border: 1px solid var(--prose-pre-border);
+}
+
+/* The header's own top margin is 64px, tuned for a title that opens the page.
+   Under a hero it reads as a gap, so it closes up. */
+.article-header.has-hero {
+  margin-top: 28px;
+}
+
+/* --- figures ---
+   Mid-article diagrams are inline SVG rather than images: they carry real
+   text, stay sharp at any width, cost no extra request, and need no 2x
+   variant. The figure element gives them the caption that explains what the
+   reader is looking at. */
+.prose figure {
+  margin: 32px 0;
+}
+
+.prose figure svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  border: 1px solid var(--prose-pre-border);
+  background-color: var(--prose-pre-bg);
+}
+
+.prose figcaption {
+  margin-top: 12px;
+  color: var(--prose-muted);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  line-height: 1.5;
+}

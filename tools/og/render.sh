@@ -26,7 +26,14 @@ CHROME_CANDIDATES="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
 /usr/bin/chromium"
 
 HERE=$(cd "$(dirname "$0")" && pwd)
-OUT=$(cd "$HERE/../../public/assets/og" && pwd)
+
+# Defaults reproduce the original behaviour exactly: this directory's cards,
+# rendered 1200x630 into public/assets/og. tools/hero/render.sh overrides all
+# three rather than duplicating the Chrome-finding logic below.
+SRC_DIR="${SRC_DIR:-$HERE}"
+OUT="${OUT_DIR:-$(cd "$HERE/../../public/assets/og" && pwd)}"
+CARD_SIZE="${CARD_SIZE:-1200,630}"
+EXPECT_SIZE=$(printf '%s' "$CARD_SIZE" | tr ',' ' ')
 
 # A subshell function, so setting IFS to a newline here cannot leak into the
 # whitespace-split loop over $CARDS below.
@@ -57,22 +64,22 @@ fi
 if [ "$#" -gt 0 ]; then
   CARDS="$*"
 else
-  CARDS=$(cd "$HERE" && ls *.html | sed 's/\.html$//')
+  CARDS=$(cd "$SRC_DIR" && ls *.html | sed 's/\.html$//')
 fi
 
 for card in $CARDS; do
-  src="$HERE/$card.html"
+  src="$SRC_DIR/$card.html"
   [ -f "$src" ] || { echo "no such card: $src" >&2; exit 1; }
   "$CHROME" --headless --disable-gpu --hide-scrollbars \
-    --force-device-scale-factor=1 --window-size=1200,630 \
+    --force-device-scale-factor=1 --window-size="$CARD_SIZE" \
     --screenshot="$OUT/$card.png" "file://$src" 2>/dev/null
-  # The card is only correct at exactly 1200x630, because og:image:width and
-  # og:image:height are published as those numbers.
+  # A share card is only correct at exactly its declared size, because
+  # og:image:width and og:image:height are published as those numbers.
   size=$(sips -g pixelWidth -g pixelHeight "$OUT/$card.png" | awk '/pixel/ {printf "%s", $2 " "}')
   bytes=$(wc -c < "$OUT/$card.png" | tr -d ' ')
   echo "$card.png  ${size}px  ${bytes} bytes"
   case "$size" in
-    "1200 630 ") ;;
-    *) echo "  ^ WRONG SIZE, expected 1200 630" >&2; exit 1 ;;
+    "$EXPECT_SIZE ") ;;
+    *) echo "  ^ WRONG SIZE, expected $EXPECT_SIZE" >&2; exit 1 ;;
   esac
 done
