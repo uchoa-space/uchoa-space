@@ -89,14 +89,19 @@ Two commands, not one command with a `confidence: 0.87`:
 
 ```ruby
 # verify_signer
-accepts  signer: :ref, source: %w[icp_brasil gov_br bank_account certificate], reference: :text, checked_at: :datetime
+accepts  signer: :ref,
+         source: %w[icp_brasil gov_br bank_account certificate],
+         reference: :text, checked_at: :datetime
 requires signer: :invited
 leaves   signer: :authenticated
 ```
 
 ```ruby
 # cross_validate_signer
-accepts  signer: :ref, basis: %w[selfie_document sms_token email_token whatsapp_token geolocation], reference: :text, checked_at: :datetime
+accepts  signer: :ref,
+         basis: %w[selfie_document sms_token email_token
+                   whatsapp_token geolocation],
+         reference: :text, checked_at: :datetime
 requires signer: :invited
 leaves   signer: :authenticated
 ```
@@ -136,7 +141,11 @@ An envelope changing state owes a webhook to whoever subscribed. That is not the
 command
 
 intent   "Records that an envelope event owes a hand-off to a subscribed endpoint"
-accepts  envelope: :ref, event: %w[envelope.sent signer.signed signer.refused envelope.closed envelope.cancelled], subscriber: :ref, payload_version: %w[v1 v2]
+accepts  envelope: :ref,
+         event: %w[envelope.sent signer.signed signer.refused
+                   envelope.closed envelope.cancelled],
+         subscriber: :ref,
+         payload_version: %w[v1 v2]
 leaves   delivery: :pending
 returns  :delivery
 once     :envelope, :event, :subscriber
